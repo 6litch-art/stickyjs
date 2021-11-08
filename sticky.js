@@ -13,8 +13,11 @@ jQuery.event.special.scrolldelta = {
 
         if (targetData.elastic && targetData.interval === undefined) {
 
-            targetData.time0 = new Date().getTime();
-            targetData.time  = targetData.time || targetData.time0;
+            if(event.scrollT === undefined) {
+            
+                targetData.time0 = new Date().getTime();
+                targetData.time  = targetData.time || targetData.time0;
+            }
 
             targetData.eventListener = elem.addEventListener('scrolldelta:holding', function (e) {
     
@@ -46,7 +49,7 @@ jQuery.event.special.scrolldelta = {
                     targetData.time  = undefined;
                 }
 
-            }, 250);
+            }, Sticky.get("throttle"));
 
         } else {
 
@@ -102,7 +105,9 @@ $.fn.serializeObject = function () {
             "bottom":false,
             "left":false,
             "right":false,
-        }
+        },
+        "throttle": 250,
+        "threshold": 500
     };
 
     var debug = false;
@@ -172,51 +177,48 @@ $.fn.serializeObject = function () {
 
     Sticky.compute = function(event) {
 
-        var elem = event.target;
-        var targetData = jQuery.data(elem);
+        var targetData = jQuery.data(event.target);
 
-        var isDocument = elem === document;
+        var elem = event.target;
+        if (elem === document)
+            elem = document.documentElement;
+        if (elem === window)
+            elem = document.documentElement;
+
+        var elemRect = elem.getBoundingClientRect();
         var dY = targetData.top  || 0;
         var dX = targetData.left || 0;
-        var dW = targetData.elemWidth || $(elem).innerWidth();
-        var dH = targetData.elemHeight || $(elem).innerHeight();
 
         targetData.time0 = targetData.time0 || new Date().getTime();
         targetData.time  = targetData.time  || targetData.time0;
         var dT = targetData.time;
 
         // Screen & viewport positioning
-        targetData.viewportWidth  = $(elem.documentElement).innerWidth();
-        targetData.elemWidth      = $(elem).innerWidth();
-        targetData.viewportHeight = $(elem.documentElement).innerHeight();
-        targetData.elemHeight      = $(elem).innerHeight();
-
-        var reajustScrollX = (targetData.elemWidth  != dW ? targetData.elemWidth : window.scrollX);
-        var reajustScrollY = (targetData.elemHeight != dH ? targetData.elemHeight : window.scrollY);
-        var reajustScroll  = (reajustScrollX != window.scrollX || reajustScrollY != window.scrollY);
-        if (reajustScroll)
-            window.scrollTo(reajustScrollX, reajustScrollY);
+        targetData.vw = Math.round(Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0));
+        targetData.vh = Math.round(Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0));
+        targetData.width  = elemRect.width;
+        targetData.height = elemRect.height
 
         // Scrolling information
         targetData.time0 = targetData.time0 || new Date().getTime();
         targetData.time  = targetData.time  || targetData.time0;
 
-        targetData.top        = isDocument ? elem.documentElement.scrollTop + elem.body.scrollTop : elem.scrollTop;
+        targetData.top        = Math.round(-elemRect.top);
         targetData.topCounter = targetData.topCounter || 0;
         if (targetData.top    == 0 && targetData.top < dY)
             targetData.topCounter    = (targetData.top    == 0 && dY ? targetData.topCounter    + 1 : targetData.topCounter   ) || 0;
 
-        targetData.bottom = targetData.elemHeight - (targetData.top + targetData.viewportHeight);
+        targetData.bottom = Math.round(elemRect.bottom - targetData.vh);
         targetData.bottomCounter = targetData.bottomCounter || 0;
         if (targetData.bottom == 0 && targetData.top > dY)
             targetData.bottomCounter = (targetData.bottom == 0 && dY ? targetData.bottomCounter + 1 : targetData.bottomCounter) || 0;
 
-        targetData.left   = isDocument ? elem.documentElement.scrollLeft + elem.body.scrollLeft : elem.scrollLeft;
+        targetData.left   = Math.round(-elemRect.left);
         targetData.leftCounter = targetData.leftCounter || 0;
         if (targetData.left   == 0 && targetData.left < dX)
             targetData.leftCounter   = (targetData.left   == 0 && dX ? targetData.leftCounter   + 1 : targetData.leftCounter  ) || 0;
 
-        targetData.right  = targetData.elemWidth  - (targetData.left + targetData.viewportWidth);
+        targetData.right  = Math.round(elemRect.right - targetData.vw);
         targetData.rightCounter = targetData.rightCounter || 0;
         if (targetData.right  == 0 && targetData.left > dX)
             targetData.rightCounter  = (targetData.right  == 0 && dX ? targetData.rightCounter  + 1 : targetData.rightCounter ) || 0;
@@ -247,14 +249,13 @@ $.fn.serializeObject = function () {
 
         targetData.elastic       = targetData.topElastic || targetData.bottomElastic || targetData.leftElastic || targetData.rightElastic;
         event.screen = {
-            "element":elem,
-            "element_height":targetData.elemHeight,
-            "element_width":targetData.elemWidth,
-            "viewport_height":targetData.viewportHeight,
-            "viewport_width":targetData.viewportWidth,
+            "height":targetData.height,
+            "width":targetData.width,
+            "vh":targetData.vh,
+            "vw":targetData.vw,
         };
         
-        event.deltaX = targetData.left - dX;
+        event.deltaX  = targetData.left - dX;
         event.scrollX = {
             "delta"   : targetData.left - dX,
             "left": targetData.left,
@@ -266,7 +267,7 @@ $.fn.serializeObject = function () {
             "time"    : 0
         };
 
-        event.deltaY = targetData.top - dY;
+        event.deltaY  = targetData.top - dY;
         event.scrollY = {
             "delta"   : targetData.top - dY,
             "top": targetData.top,
@@ -287,7 +288,7 @@ $.fn.serializeObject = function () {
         return event;
     };
 
-    Sticky.overscrollTop    = function(event) { 
+    Sticky.overscrollTop    = function(event) {
         var deltaY = (event.deltaY !== undefined ? event.deltaY : event.originalEvent.deltaY);
         return $(window).height() != $(document).height() && window.scrollY === 0 && deltaY < 0;
     }  
@@ -381,12 +382,13 @@ $.fn.serializeObject = function () {
                     $(this).css("bottom", Math.min(0,-e.scrollY.bottom));
                     if(e.scrollY.bottom > 0) $(this).addClass("skip-transition");
                 }
-            }
+    
+            } else if (e.scrollY.bottom <= 0 && e.scrollT.delta > Sticky.get("threshold")) {
 
-            if (e.scrollY.bottom < 0 && e.scrollT.delta > 100)
                 $(this).addClass("show");
+                $(this).removeAttr("style");
+            }
         });
-
     }
 
     Sticky.onWheel = function (event) {

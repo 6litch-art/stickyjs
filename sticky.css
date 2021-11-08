@@ -1,0 +1,17 @@
+.sticky { transition: all 500ms ease-in-out; }
+.sticky.skip-transition { transition: none; }
+
+.sticky-top.show { top:0; }
+.sticky-top { 
+	transition: all 250ms ease-in-out;
+	position:fixed; top:0%; 
+}
+
+.sticky-widget { 
+    position:-webkit-sticky;
+	position:sticky;
+    top:0;
+}
+
+.sticky-bottom.show { bottom:0; }
+.sticky-bottom { position:fixed; bottom:-100%; }

@@ -107,7 +107,7 @@ $.fn.serializeObject = function () {
             "right":false,
         },
         "throttle": 250,
-        "threshold": 500
+        "threshold": 1000
     };
 
     var debug = false;

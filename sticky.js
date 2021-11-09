@@ -13,14 +13,13 @@ jQuery.event.special.scrolldelta = {
 
         if (targetData.elastic && targetData.interval === undefined) {
 
-            if(event.scrollT === undefined) {
-            
-                targetData.time0 = new Date().getTime();
-                targetData.time  = targetData.time || targetData.time0;
-            }
-
             targetData.eventListener = elem.addEventListener('scrolldelta:holding', function (e) {
     
+                if(event.scrollT === undefined) {
+                    targetData.time0 = new Date().getTime();
+                    targetData.time  = targetData.time || targetData.time0;
+                }
+
                 var targetData = jQuery.data(e.target);
                 e = Sticky.compute(e, targetData);
                 Sticky.onWheel(e);
@@ -51,10 +50,6 @@ jQuery.event.special.scrolldelta = {
 
             }, Sticky.get("throttle"));
 
-        } else {
-
-            targetData.time0 = undefined;
-            targetData.time  = undefined;
         }
 
         event = Sticky.compute(event, targetData);
@@ -107,7 +102,7 @@ $.fn.serializeObject = function () {
             "right":false,
         },
         "throttle": 250,
-        "threshold": 1000
+        "threshold": 2000
     };
 
     var debug = false;
@@ -332,9 +327,10 @@ $.fn.serializeObject = function () {
                     $(this).removeClass("skip-transition");
                     
                 } else {
-                
+
+                    var borderThickness = parseInt($(this).css("border-bottom-width")) + parseInt($(this).css("border-top-width"));
                     $(this).removeClass("show");
-                    $(this).css("top", -this.clientHeight);
+                    $(this).css("top", -this.clientHeight-borderThickness);
                     if(e.scrollY.top == e.scrollY.delta)
                         $(this).addClass("skip-transition");
                 }

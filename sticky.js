@@ -109,11 +109,14 @@ $.fn.serializeObject = function () {
     var ready = false;
     Sticky.ready = function (options = {}) {
 
+        if("debug" in options)
+            debug = options["debug"];
+
         Sticky.configure(options);
         ready = true;
 
-        dispatchEvent(new Event('sticky:ready'));
         if (debug) console.log("Sticky is ready.");
+        dispatchEvent(new Event('sticky:ready'));
 
         return this;
     };
@@ -300,12 +303,6 @@ $.fn.serializeObject = function () {
         return $(window).width() != $(document).width() && Math.ceil(window.scrollX + $(window).width()) >= $(document).width() && deltaX > 0;
     }
 
-    Sticky.onLoad = function () {
-
-        if (debug) console.log("Sticky loading.");
-        dispatchEvent(new Event('load'));
-    }
-
     Sticky.onScrollDelta = function (e) {
 
         if (debug) console.log("Sticky delta scrolling.. ", e.scrollY, e.scrollX, e.scrollT, e.screen);
@@ -400,10 +397,15 @@ $.fn.serializeObject = function () {
             $(window).trigger('scrolldelta');
     };
 
-    Sticky.onLoad();
-    
-    $(window).on('wheel', Sticky.onWheel);
-    $(window).on('scrolldelta', Sticky.onScrollDelta);
+    Sticky.onLoad = function ()
+    {
+        $(window).on('wheel', Sticky.onWheel);
+        $(window).on('scrolldelta', Sticky.onScrollDelta);    
+    }
+
+    $(document).ready(function() {
+        Sticky.onLoad();
+    });
 
     return Sticky;
 });

@@ -16,7 +16,14 @@ jQuery.event.special.scrolldelta = {
             targetData.eventListener = elem.addEventListener('scrolldelta:holding', function (e) {
     
                 if(event.scrollT === undefined) {
-                    targetData.time0 = new Date().getTime();
+                    
+                    targetData.time0 = {
+                        top:new Date().getTime(), 
+                        left:new Date().getTime(), 
+                        bottom:new Date().getTime(), 
+                        right:new Date().getTime()
+                    };
+
                     targetData.time  = targetData.time || targetData.time0;
                 }
 
@@ -32,8 +39,16 @@ jQuery.event.special.scrolldelta = {
 
             targetData.interval = setInterval(function () {
 
-                targetData.time = new Date().getTime();
-
+                targetData.time = {};
+                targetData.time.top     = targetData.topElastic    ? new Date().getTime()    : undefined;
+                targetData.time.bottom  = targetData.bottomElastic ? new Date().getTime()    : undefined;
+                targetData.time.left    = targetData.leftElastic   ? new Date().getTime()    : undefined;
+                targetData.time.right   = targetData.rightElastic  ? new Date().getTime()    : undefined;
+                targetData.time0.top    = targetData.topElastic    ? targetData.time0.top    : undefined;
+                targetData.time0.bottom = targetData.bottomElastic ? targetData.time0.bottom : undefined;
+                targetData.time0.left   = targetData.leftElastic   ? targetData.time0.left   : undefined;
+                targetData.time0.right  = targetData.rightElastic  ? targetData.time0.right  : undefined;
+                
                 var eventHolding = new Event('scrolldelta:holding');
                 if(targetData.elastic) elem.dispatchEvent(eventHolding);
                 else {
@@ -184,12 +199,10 @@ $.fn.serializeObject = function () {
             elem = document.documentElement;
 
         var elemRect = elem.getBoundingClientRect();
-        var dY = targetData.top  || 0;
-        var dX = targetData.left || 0;
-
-        targetData.time0 = targetData.time0 || new Date().getTime();
-        targetData.time  = targetData.time  || targetData.time0;
-        var dT = targetData.time;
+        var top     = targetData.top  || 0   ;
+        var left    = targetData.left ||    0;
+        var bottom  = targetData.bottom  || 0;
+        var right   = targetData.right   || 0;
 
         // Screen & viewport positioning
         targetData.vw = Math.round(Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0));
@@ -198,28 +211,32 @@ $.fn.serializeObject = function () {
         targetData.height = elemRect.height
 
         // Scrolling information
-        targetData.time0 = targetData.time0 || new Date().getTime();
-        targetData.time  = targetData.time  || targetData.time0;
-
-        targetData.top        = Math.round(-elemRect.top);
-        targetData.topCounter = targetData.topCounter || 0;
-        if (targetData.top    == 0 && targetData.top < dY)
-            targetData.topCounter    = (targetData.top    == 0 && dY ? targetData.topCounter    + 1 : targetData.topCounter   ) || 0;
-
+        targetData.top    = Math.round(-elemRect.top);
         targetData.bottom = Math.round(elemRect.bottom - targetData.vh);
-        targetData.bottomCounter = targetData.bottomCounter || 0;
-        if (targetData.bottom == 0 && targetData.top > dY)
-            targetData.bottomCounter = (targetData.bottom == 0 && dY ? targetData.bottomCounter + 1 : targetData.bottomCounter) || 0;
-
         targetData.left   = Math.round(-elemRect.left);
-        targetData.leftCounter = targetData.leftCounter || 0;
-        if (targetData.left   == 0 && targetData.left < dX)
-            targetData.leftCounter   = (targetData.left   == 0 && dX ? targetData.leftCounter   + 1 : targetData.leftCounter  ) || 0;
-
         targetData.right  = Math.round(elemRect.right - targetData.vw);
+
+        targetData.topCounter = targetData.topCounter || 0;
+        if (targetData.top    == 0 && targetData.top < top)
+            targetData.topCounter    = (targetData.top    == 0 && top    > 0 ? targetData.topCounter    + 1 : targetData.topCounter   ) || 0;
+
+        targetData.bottomCounter = targetData.bottomCounter || 0;
+        if (targetData.bottom == 0 && targetData.top > top)
+            targetData.bottomCounter = (targetData.bottom == 0 && bottom > 0 ? targetData.bottomCounter + 1 : targetData.bottomCounter) || 0;
+
+        targetData.leftCounter = targetData.leftCounter || 0;
+        if (targetData.left   == 0 && targetData.left < left)
+            targetData.leftCounter   = (targetData.left   == 0 && left   > 0 ? targetData.leftCounter   + 1 : targetData.leftCounter  ) || 0;
+
         targetData.rightCounter = targetData.rightCounter || 0;
-        if (targetData.right  == 0 && targetData.left > dX)
-            targetData.rightCounter  = (targetData.right  == 0 && dX ? targetData.rightCounter  + 1 : targetData.rightCounter ) || 0;
+        if (targetData.right  == 0 && targetData.left > left)
+            targetData.rightCounter  = (targetData.right  == 0 && right  > 0 ? targetData.rightCounter  + 1 : targetData.rightCounter ) || 0;
+
+        targetData.bottomElastic = targetData.bottom < 0;
+        if(Sticky.get("overscroll").bottom) {
+            targetData.bottomElastic = true;
+            targetData.bottom = -1;
+        }
 
         targetData.topElastic    = targetData.top < 0;
         if(Sticky.get("overscroll").top) {
@@ -233,66 +250,90 @@ $.fn.serializeObject = function () {
             targetData.left = -1;
         }
 
-        targetData.bottomElastic = targetData.bottom < 0;
-        if(Sticky.get("overscroll").bottom) {
-            targetData.bottomElastic = true;
-            targetData.bottom = -1;
-        }
-
         targetData.rightElastic  = targetData.right < 0;
         if(Sticky.get("overscroll").right) {
             targetData.rightElastic = true;
             targetData.right = -1;
         }
 
-        targetData.elastic       = targetData.topElastic || targetData.bottomElastic || targetData.leftElastic || targetData.rightElastic;
-        event.screen = {
-            "height":targetData.height,
-            "width":targetData.width,
-            "vh":targetData.vh,
-            "vw":targetData.vw,
-        };
-        
-        event.deltaX  = targetData.left - dX;
-        event.scrollX = {
-            "delta"   : targetData.left - dX,
-            "left": targetData.left,
-            "leftCounter" : targetData.leftCounter,
-            "leftElastic" : targetData.leftElastic,
-            "right": targetData.right,
-            "rightCounter" : targetData.rightCounter,
-            "rightElastic" : targetData.rightElastic,
-            "time"    : 0
+        targetData.elastic = targetData.topElastic || targetData.bottomElastic || targetData.leftElastic || targetData.rightElastic;
+
+        // Timing information
+        targetData.time0        = targetData.time0 || {};
+        targetData.time0.top    = targetData.time0.top    || new Date().getTime();
+        targetData.time0.bottom = targetData.time0.bottom || new Date().getTime();
+        targetData.time0.left   = targetData.time0.left   || new Date().getTime();
+        targetData.time0.right  = targetData.time0.right  || new Date().getTime();
+
+        targetData.time         = targetData.time || {};
+        targetData.time.top     = targetData.time.top     || targetData.time0.top;
+        targetData.time.bottom  = targetData.time.bottom  || targetData.time0.bottom;
+        targetData.time.left    = targetData.time.left    || targetData.time0.left;
+        targetData.time.right   = targetData.time.right   || targetData.time0.right;
+
+        var dX = targetData.top  - top;
+        var dY = targetData.left - left;
+        var dT = {
+            top:    Math.abs(targetData.time0.top - targetData.time.top),
+            bottom: Math.abs(targetData.time0.bottom - targetData.time.bottom),
+            left:   Math.abs(targetData.time0.left - targetData.time.left),
+            right:  Math.abs(targetData.time0.right - targetData.time.right)
         };
 
-        event.deltaY  = targetData.top - dY;
+        // Event summary information
+        event.deltaX = dX;
+        event.deltaY = dY;
+        event.deltaT = dT;
+        event.reset  = (
+            dX        == 0 && dY       == 0 &&
+            dT.top    == 0 && dT.left  == 0 &&
+            dT.bottom == 0 && dT.right == 0
+        );
+        
+        event.scrollT = {
+            "delta"   : dT,
+            "t0"      : targetData.time0,
+            "elastic" : targetData.elastic
+        }
+
+        event.screen = {
+            "height" : targetData.height,
+            "width"  : targetData.width,
+            "vh"     : targetData.vh,
+            "vw"     : targetData.vw,
+        };
+        
+        event.scrollX = {
+            "delta"        : dX,
+            "left"         : targetData.left,
+            "leftCounter"  : targetData.leftCounter,
+            "leftElastic"  : targetData.leftElastic,
+            "right"        : targetData.right,
+            "rightCounter" : targetData.rightCounter,
+            "rightElastic" : targetData.rightElastic
+        };
+
         event.scrollY = {
-            "delta"   : targetData.top - dY,
-            "top": targetData.top,
-            "topCounter" : targetData.topCounter,
-            "topElastic" : targetData.topElastic,
-            "bottom": targetData.bottom,
+            "delta"         : dY,
+            "top"           : targetData.top,
+            "topCounter"    : targetData.topCounter,
+            "topElastic"    : targetData.topElastic,
+            "bottom"        : targetData.bottom,
             "bottomCounter" : targetData.bottomCounter,
             "bottomElastic" : targetData.bottomElastic,
             
         };
-
-        event.scrollT = {
-            "delta" : Math.abs(targetData.time0 - dT),
-            "t0"    : targetData.time0,
-            "elastic" : targetData.elastic,
-        }
 
         return event;
     };
 
     Sticky.overscrollTop    = function(event) {
         var deltaY = (event.deltaY !== undefined ? event.deltaY : event.originalEvent.deltaY);
-        return $(window).height() != $(document).height() && window.scrollY === 0 && deltaY < 0;
+        return /*$(window).height() != $(document).height() &&*/ window.scrollY === 0 && deltaY < 0;
     }  
     Sticky.overscrollBottom = function(event) { 
         var deltaY = (event.deltaY !== undefined ? event.deltaY : event.originalEvent.deltaY);
-        return $(window).height() != $(document).height() && Math.ceil(window.scrollY + $(window).height()) >= $(document).height() && deltaY > 0;
+        return /*$(window).height() != $(document).height() &&*/ Math.ceil(window.scrollY + $(window).height()) >= $(document).height() && deltaY > 0;
     }
     Sticky.overscrollLeft   = function(event) { 
         var deltaX = (event.deltaX !== undefined ? event.deltaX : event.originalEvent.deltaX);
@@ -300,7 +341,7 @@ $.fn.serializeObject = function () {
     }
     Sticky.overscrollRight  = function(event) { 
         var deltaX = (event.deltaX !== undefined ? event.deltaX : event.originalEvent.deltaX);
-        return $(window).width() != $(document).width() && Math.ceil(window.scrollX + $(window).width()) >= $(document).width() && deltaX > 0;
+        return /*$(window).width() != $(document).width() &&*/ Math.ceil(window.scrollX + $(window).width()) >= $(document).width() && deltaX > 0;
     }
 
     Sticky.onScrollDelta = function (e) {
@@ -360,13 +401,18 @@ $.fn.serializeObject = function () {
         });
 
         $(".sticky-bottom").each(function() {
-        
+
+            if(e.reset) $(this).removeClass("hint");
+            if(e.scrollT.delta.bottom > Sticky.get("threshold")/4) $(this).addClass("hint");
+            else if(e.scrollT.delta.top > Sticky.get("threshold")/4) $(this).addClass("hint");
+            
             if($(this).hasClass("show")) {
 
                 // Action element
-                if (e.scrollY.bottom > this.clientHeight) {
+                if (e.scrollY.bottom > this.clientHeight || e.scrollT.delta.top > Sticky.get("threshold")) {
 
                     $(this).removeClass("show");
+                    $(this).removeClass("hint");
                     $(this).removeClass("skip-transition");
                     $(this).removeAttr("style");
 
@@ -375,8 +421,8 @@ $.fn.serializeObject = function () {
                     $(this).css("bottom", Math.min(0,-e.scrollY.bottom));
                     if(e.scrollY.bottom > 0) $(this).addClass("skip-transition");
                 }
-    
-            } else if (e.scrollY.bottom <= 0 && e.scrollT.delta > Sticky.get("threshold")) {
+
+            } else if(e.scrollT.delta.bottom > Sticky.get("threshold")) {
 
                 $(this).addClass("show");
                 $(this).removeAttr("style");
@@ -386,6 +432,7 @@ $.fn.serializeObject = function () {
 
     Sticky.onWheel = function (event) {
       
+        // Overscroll detection
         var overscroll = {top:false, right:false, bottom:false, left:false};
         overscroll.top    = Sticky.overscrollTop(event);
         overscroll.bottom = Sticky.overscrollBottom(event);
@@ -395,6 +442,12 @@ $.fn.serializeObject = function () {
         Sticky.set("overscroll", overscroll);
         if(overscroll.top || overscroll.bottom || overscroll.left || overscroll.right)
             $(window).trigger('scrolldelta');
+
+        // On stop wheel event
+        clearTimeout($.data(this, 'timer'));
+        $.data(this, 'timer', setTimeout(function() {
+            $(window).trigger('scrolldelta');
+        }, Sticky.get("throttle")));
     };
 
     Sticky.onLoad = function ()

@@ -18,5 +18,9 @@ html {
     top:0;
 }
 
+.sticky-bottom { 
+	transition: all 250ms ease-in-out;
+}
+
 .sticky-bottom.show { bottom:0; }
-.sticky-bottom { position:fixed; bottom:-100%; }
+.sticky-bottom { position:fixed; bottom:-100vh; }

@@ -38,22 +38,26 @@ jQuery.event.special.scrolldelta = {
             }, false);
 
             targetData.interval = setInterval(function () {
-
-                targetData.time = {};
+        
+                if (targetData.time === undefined)
+                    targetData.time = {};
+    
                 targetData.time.top     = targetData.topElastic    ? new Date().getTime()    : undefined;
                 targetData.time.bottom  = targetData.bottomElastic ? new Date().getTime()    : undefined;
                 targetData.time.left    = targetData.leftElastic   ? new Date().getTime()    : undefined;
                 targetData.time.right   = targetData.rightElastic  ? new Date().getTime()    : undefined;
 
+                if (targetData.time0 === undefined)
+                    targetData.time0 = {};
+
                 targetData.time0.top    = targetData.topElastic    ? targetData.time0.top    : undefined;
                 targetData.time0.bottom = targetData.bottomElastic ? targetData.time0.bottom : undefined;
                 targetData.time0.left   = targetData.leftElastic   ? targetData.time0.left   : undefined;
                 targetData.time0.right  = targetData.rightElastic  ? targetData.time0.right  : undefined;
-
+                
                 var eventHolding = new Event('scrolldelta:holding');
                 if(targetData.elastic) elem.dispatchEvent(eventHolding);
                 else {
-
                     if(targetData.eventListener) 
                         elem.removeEventListener(targetData.eventListener);
                     
@@ -65,7 +69,6 @@ jQuery.event.special.scrolldelta = {
                 }
 
             }, Sticky.get("throttle"));
-
         }
 
         event = Sticky.compute(event, targetData);
@@ -215,7 +218,7 @@ $.fn.serializeObject = function () {
         targetData.bottom = $(document).height() - window.scrollY - targetData.vh;
         targetData.left   = window.scrollX;
         targetData.right  = $(document).width()  - window.scrollX - targetData.vw;
-
+        
         targetData.topCounter = targetData.topCounter || 0;
         if (targetData.top    == 0 && targetData.top < top)
             targetData.topCounter    = (targetData.top    == 0 && top    > 0 ? targetData.topCounter    + 1 : targetData.topCounter   ) || 0;
@@ -259,18 +262,22 @@ $.fn.serializeObject = function () {
         targetData.elastic = targetData.topElastic || targetData.bottomElastic || targetData.leftElastic || targetData.rightElastic;
 
         // Timing information
-        targetData.time0        = targetData.time0 || {};
+        if (targetData.time0 === undefined)
+            targetData.time0 = {};
+    
         targetData.time0.top    = targetData.time0.top    || new Date().getTime();
         targetData.time0.bottom = targetData.time0.bottom || new Date().getTime();
         targetData.time0.left   = targetData.time0.left   || new Date().getTime();
         targetData.time0.right  = targetData.time0.right  || new Date().getTime();
 
-        targetData.time         = targetData.time || {};
+        if (targetData.time === undefined)
+            targetData.time = {};
+
         targetData.time.top     = targetData.time.top     || targetData.time0.top;
         targetData.time.bottom  = targetData.time.bottom  || targetData.time0.bottom;
         targetData.time.left    = targetData.time.left    || targetData.time0.left;
         targetData.time.right   = targetData.time.right   || targetData.time0.right;
-
+        
         var dX = targetData.left  - left;
         var dY = targetData.top - top;
         var dT = {
@@ -364,7 +371,7 @@ $.fn.serializeObject = function () {
                     $(this).removeAttr("style");
                     $(this).removeClass("skip-transition");
                     
-                } else {
+                } else if(e.scrollY.delta > 0){
 
                     var borderThickness = parseInt($(this).css("border-bottom-width")) + parseInt($(this).css("border-top-width"));
                     $(this).removeClass("show");
@@ -441,12 +448,12 @@ $.fn.serializeObject = function () {
 
         Sticky.set("overscroll", overscroll);
         if(overscroll.top || overscroll.bottom || overscroll.left || overscroll.right)
-            $(window).trigger('scrolldelta');
+            $(document).trigger('scrolldelta');
 
         // On stop wheel event
         clearTimeout($.data(this, 'timer'));
         $.data(this, 'timer', setTimeout(function() {
-            $(window).trigger('scrolldelta');
+            $(document).trigger('scrolldelta');
         }, Sticky.get("throttle")));
     };
 

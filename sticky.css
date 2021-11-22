@@ -7,15 +7,17 @@ html {
 
 .sticky-top.show { top:0; }
 .sticky-top { 
-	transition: all 250ms ease-in-out;
+	transition: all 500ms ease-in-out;
 	position:fixed; top:0%; 
     z-index:auto;
 }
 
 .sticky-widget { 
+	transition: all 500ms ease-in-out;
     position:-webkit-sticky;
 	position:sticky;
     top:0;
+    opacity:0;
 }
 
 .sticky-bottom { 

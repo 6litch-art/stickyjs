@@ -200,12 +200,14 @@ $.fn.serializeObject = function () {
         if (elem === window  ) elem = document.documentElement;
         if (elem === document) elem = document.documentElement;
 
+        var first   = (Object.keys(targetData).length === 0);
         var top     = targetData.top    || 0;
         var left    = targetData.left   || 0;
         var bottom  = targetData.bottom || 0;
         var right   = targetData.right  || 0;
 
         // Screen & viewport positioning
+        targetData.first  = first;
         targetData.vw     = Math.round(Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0));
         targetData.vh     = Math.round(Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0));
         targetData.pw     = $(document).width();
@@ -219,6 +221,14 @@ $.fn.serializeObject = function () {
         targetData.left   = window.scrollX;
         targetData.right  = $(document).width()  - window.scrollX - targetData.vw;
         
+        if(first) {
+
+            top    = targetData.top;
+            bottom = targetData.bottom;
+            left   = targetData.left;
+            right  = targetData.right;
+        }
+
         targetData.topCounter = targetData.topCounter || 0;
         if (targetData.top    == 0 && targetData.top < top)
             targetData.topCounter    = (targetData.top    == 0 && top    > 0 ? targetData.topCounter    + 1 : targetData.topCounter   ) || 0;
@@ -304,6 +314,7 @@ $.fn.serializeObject = function () {
         }
 
         event.screen = {
+            "first"  : targetData.first,
             "height" : targetData.height,
             "width"  : targetData.width,
             "vh"     : targetData.vh,
@@ -353,10 +364,12 @@ $.fn.serializeObject = function () {
 
     Sticky.onScrollDelta = function (e) {
 
+        // e.scrollY.delta = 0;
         if (debug) console.log("Sticky delta scrolling.. ", e.scrollY, e.scrollX, e.scrollT, e.screen);
 
         $(".sticky-top").each(function() {
 
+            if(e.screen.first) return;
             if(e.scrollY.top > this.clientHeight || $(this).hasClass("show")) {
 
                 // Prevent element shaking
@@ -369,14 +382,15 @@ $.fn.serializeObject = function () {
 
                     $(this).addClass("show");
                     $(this).removeAttr("style");
-                    $(this).removeClass("skip-transition");
+                    if(!e.screen.first)
+                        $(this).removeClass("skip-transition");
                     
                 } else if(e.scrollY.delta > 0){
 
                     var borderThickness = parseInt($(this).css("border-bottom-width")) + parseInt($(this).css("border-top-width"));
                     $(this).removeClass("show");
                     $(this).css("top", -this.clientHeight-borderThickness);
-                    if(e.scrollY.top == e.scrollY.delta)
+                    if(e.scrollY.top == e.scrollY.delta && !e.screen.first)
                         $(this).addClass("skip-transition");
                 }
 
@@ -385,25 +399,38 @@ $.fn.serializeObject = function () {
                 Sticky.remove("transition", this);
 
                 $(this).css("top", Math.min(0,-e.scrollY.top));
-                if(e.scrollY.top > 0)
+                if(e.scrollY.top > 0 && !e.screen.first)
                     $(this).addClass("skip-transition");
-
             }
         });
 
         $(".sticky-widget").each(function() {
-        
-            $(this).addClass("skip-transition");
+
+            $(this).css("opacity", 1);
+            if(!e.screen.first) $(this).addClass("skip-transition");
+            else {
+
+                $(this).one("transitionend animationend", function() {
+                    $(this).addClass("skip-transition");
+                });
+            }
+
+            var extraOffsetTop = parseInt(this.dataset.stickyOffsetTop) || 0;
+            var extraOffsetBottom = parseInt(this.dataset.stickyOffsetBottom) || 0
 
             var firstChild = this.firstElementChild;
-            var offsetTop = Math.max(parseInt($(this).css("margin-top")), parseInt($(firstChild).css("margin-top")));
+            var offsetTop  = Math.max(parseInt($(this).css("margin-top")), parseInt($(firstChild).css("margin-top")));
+                offsetTop += extraOffsetTop;
+
             $(this).css("top", offsetTop);
-            $(this).css("margin-top", offsetTop);
+            $(this).css("margin-top", offsetTop - extraOffsetTop);
             $(firstChild).css("margin-top", 0);
 
             var lastChild = this.lastElementChild;
-            var offsetBottom = Math.max(parseInt($(this).css("margin-bottom")), parseInt($(lastChild).css("margin-bottom")));
-            $(this).css("margin-bottom", offsetBottom);
+            var offsetBottom  = Math.max(parseInt($(this).css("margin-bottom")), parseInt($(lastChild).css("margin-bottom")));
+                offsetBottom -= extraOffsetBottom;
+
+            $(this).css("margin-bottom", offsetBottom + extraOffsetBottom);
             $(lastChild).css("margin-bottom", 0);
         });
 
@@ -465,6 +492,8 @@ $.fn.serializeObject = function () {
 
     $(document).ready(function() {
         Sticky.onLoad();
+
+        $(window).trigger("scroll");
     });
 
     return Sticky;

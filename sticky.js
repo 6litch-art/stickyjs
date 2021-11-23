@@ -1,4 +1,3 @@
-
 jQuery.event.special.scrolldelta = {
 
     delegateType: "scroll",
@@ -13,7 +12,7 @@ jQuery.event.special.scrolldelta = {
 
         if (targetData.elastic && targetData.interval === undefined) {
 
-            targetData.eventListener = elem.addEventListener('scrolldelta:holding', function (e) {
+            targetData.eventListener = elem.addEventListener('scrolldelta.sticky:holding', function (e) {
     
                 if(event.scrollT === undefined) {
                     
@@ -55,7 +54,7 @@ jQuery.event.special.scrolldelta = {
                 targetData.time0.left   = targetData.leftElastic   ? targetData.time0.left   : undefined;
                 targetData.time0.right  = targetData.rightElastic  ? targetData.time0.right  : undefined;
                 
-                var eventHolding = new Event('scrolldelta:holding');
+                var eventHolding = new Event('scrolldelta.sticky:holding');
                 if(targetData.elastic) elem.dispatchEvent(eventHolding);
                 else {
                     if(targetData.eventListener) 
@@ -114,18 +113,47 @@ $.fn.serializeObject = function () {
     Sticky.version = '0.1.0';
 
     var Settings = Sticky.settings = {
+
+        //
+        // Time control
+        "throttle": "250ms",
+        "threshold": "3000ms",
+
+        //
+        // Manual overscroll detection (browser compatibility, e.g. scroll event missing with Firefox)
         "overscroll": {
             "top":false,
             "bottom":false,
             "left":false,
             "right":false,
         },
-        "throttle": 250,
-        "threshold": 3000
+
+        // Ease in/out related variables
+        // NB: if easein|easeout > 0 => additional margin
+        //     else it enters into the element (equiv. negative margin..)
+        "easein": "100px",
+        "easeout": "50px",
+        "easetime": "250ms",
+        "easedelay": "0s"
     };
+
+    var parseDuration = function(str) { 
+
+        if(String(str).endsWith("ms")) return parseFloat(String(str))/1000;
+        return parseFloat(String(str));
+    }
 
     var debug = false;
     var ready = false;
+    Sticky.reset = function() {
+
+        var targetData = jQuery.data(document);
+
+        Object.keys(targetData).forEach(function(key) {
+            delete targetData[key];
+        });
+    }
+
     Sticky.ready = function (options = {}) {
 
         if("debug" in options)
@@ -194,7 +222,7 @@ $.fn.serializeObject = function () {
 
     Sticky.compute = function(event) {
 
-        var targetData = jQuery.data(event.target);
+        var targetData = jQuery.data(document);
 
         var elem = event.target;
         if (elem === window  ) elem = document.documentElement;
@@ -301,6 +329,8 @@ $.fn.serializeObject = function () {
         event.deltaX = dX;
         event.deltaY = dY;
         event.deltaT = dT;
+
+        event.first  = first;
         event.reset  = (
             dX        == 0 && dY       == 0 &&
             dT.top    == 0 && dT.left  == 0 &&
@@ -314,7 +344,6 @@ $.fn.serializeObject = function () {
         }
 
         event.screen = {
-            "first"  : targetData.first,
             "height" : targetData.height,
             "width"  : targetData.width,
             "vh"     : targetData.vh,
@@ -364,12 +393,11 @@ $.fn.serializeObject = function () {
 
     Sticky.onScrollDelta = function (e) {
 
-        // e.scrollY.delta = 0;
         if (debug) console.log("Sticky delta scrolling.. ", e.scrollY, e.scrollX, e.scrollT, e.screen);
 
         $(".sticky-top").each(function() {
 
-            if(e.screen.first) return;
+            if(e.first) return;
             if(e.scrollY.top > this.clientHeight || $(this).hasClass("show")) {
 
                 // Prevent element shaking
@@ -382,15 +410,14 @@ $.fn.serializeObject = function () {
 
                     $(this).addClass("show");
                     $(this).removeAttr("style");
-                    if(!e.screen.first)
-                        $(this).removeClass("skip-transition");
+                    if(!e.first) $(this).removeClass("skip-transition");
                     
                 } else if(e.scrollY.delta > 0){
 
                     var borderThickness = parseInt($(this).css("border-bottom-width")) + parseInt($(this).css("border-top-width"));
                     $(this).removeClass("show");
                     $(this).css("top", -this.clientHeight-borderThickness);
-                    if(e.scrollY.top == e.scrollY.delta && !e.screen.first)
+                    if(e.scrollY.top == e.scrollY.delta && !e.first)
                         $(this).addClass("skip-transition");
                 }
 
@@ -399,15 +426,45 @@ $.fn.serializeObject = function () {
                 Sticky.remove("transition", this);
 
                 $(this).css("top", Math.min(0,-e.scrollY.top));
-                if(e.scrollY.top > 0 && !e.screen.first)
+                if(e.scrollY.top > 0 && !e.first)
                     $(this).addClass("skip-transition");
+            }
+        });
+
+        $(".sticky-bottom").each(function() {
+
+            if(e.reset) $(this).removeClass("hint");
+            if(e.scrollT.delta.bottom > 1000*parseDuration(Sticky.get("threshold"))/4) $(this).addClass("hint");
+            else if(e.scrollT.delta.top > 1000*parseDuration(Sticky.get("threshold"))/4) $(this).addClass("hint");
+            
+            if($(this).hasClass("show")) {
+
+                // Action element
+                if (e.scrollY.bottom > this.clientHeight || e.scrollT.delta.top > Sticky.get("throttle")) {
+
+                    $(this).removeClass("show");
+                    $(this).removeClass("hint");
+                    $(this).removeClass("skip-transition");
+                    $(this).removeAttr("style");
+
+                } else { // Smooth transition
+
+                    $(this).css("bottom", Math.min(0, -e.scrollY.bottom));
+                    if(e.scrollY.bottom > 0) $(this).addClass("skip-transition");
+                }
+
+            } else if(e.scrollT.delta.bottom > 1000*parseDuration(Sticky.get("threshold"))) {
+
+                $(this).addClass("show");
+                $(this).removeAttr("style");
             }
         });
 
         $(".sticky-widget").each(function() {
 
-            $(this).css("opacity", 1);
-            if(!e.screen.first) $(this).addClass("skip-transition");
+            //
+            // Initialisation
+            if(!e.first) $(this).addClass("skip-transition");
             else {
 
                 $(this).one("transitionend animationend", function() {
@@ -415,6 +472,8 @@ $.fn.serializeObject = function () {
                 });
             }
 
+            //
+            // Compute offsets
             var extraOffsetTop = parseInt(this.dataset.stickyOffsetTop) || 0;
             var extraOffsetBottom = parseInt(this.dataset.stickyOffsetBottom) || 0
 
@@ -434,38 +493,134 @@ $.fn.serializeObject = function () {
             $(lastChild).css("margin-bottom", 0);
         });
 
-        $(".sticky-bottom").each(function() {
+        $(".sticky-easein, .sticky-easeout").each(function() {
 
-            if(e.reset) $(this).removeClass("hint");
-            if(e.scrollT.delta.bottom > Sticky.get("threshold")/4) $(this).addClass("hint");
-            else if(e.scrollT.delta.top > Sticky.get("threshold")/4) $(this).addClass("hint");
+            //
+            // Update transition CSS
+            var extraEaseTime  = parseDuration(this.dataset.stickyEasetime)  || parseDuration(Sticky.get("easetime"))  || -1;
+            var extraEaseDelay = parseDuration(this.dataset.stickyEasedelay) || parseDuration(Sticky.get("easedelay")) || -1;
             
-            if($(this).hasClass("show")) {
+            if(e.first) {
+                var transitionProperty = $(this).css("transitionProperty").split(",");
+                var transitionDuration = $(this).css("transitionDuration").split(",");
+                var transitionDelay    = $(this).css("transitionDelay").split(",");
+                
+                var opacityIndex = transitionProperty.indexOf("opacity");
+                if (opacityIndex < 0) opacityIndex = transitionProperty.indexOf("all");
 
-                // Action element
-                if (e.scrollY.bottom > this.clientHeight || e.scrollT.delta.top > Sticky.get("throttle")) {
+                var opacityIndex    = (opacityIndex < 0 ? transitionDuration.length : opacityIndex);
+                    opacityDuration = (opacityIndex < 0 ? 0 : parseDuration(transitionDuration[opacityIndex]));
+                    opacityDelay    = (opacityIndex < 0 ? 0 : parseDuration(transitionDelay[opacityIndex]));
 
-                    $(this).removeClass("show");
-                    $(this).removeClass("hint");
-                    $(this).removeClass("skip-transition");
-                    $(this).removeAttr("style");
+                transitionDuration[opacityIndex] = (extraEaseTime  < 0 ? opacityDuration : extraEaseTime);
+                transitionDelay   [opacityIndex] = (extraEaseDelay < 0 ? opacityDelay    : extraEaseDelay);
 
-                } else { // Smooth transition
+                var transition = [];
+                for (var i = 0; i < transitionProperty.length; i++)
+                    transition[i] = transitionProperty[i] + " " + 
+                                    parseDuration(transitionDuration[i])+"s "+
+                                    parseDuration(transitionDelay[i])+"s";
 
-                    $(this).css("bottom", Math.min(0,-e.scrollY.bottom));
-                    if(e.scrollY.bottom > 0) $(this).addClass("skip-transition");
-                }
-
-            } else if(e.scrollT.delta.bottom > Sticky.get("threshold")) {
-
-                $(this).addClass("show");
-                $(this).removeAttr("style");
+                $(this).css("transition", transition.join(","));
             }
+            
+            //
+            // Display logic
+
+            var extraEaseIn = this.dataset.stickyEasein;
+            if (extraEaseIn === undefined) extraEaseIn = this.dataset.stickyEaseinout;
+            if (extraEaseIn === undefined && $(this).hasClass("sticky-easein")) 
+                extraEaseIn = Sticky.get("easein");
+           
+            if(extraEaseIn !== undefined) {
+                // ease-in should not be bigger than the size of the element
+                extraEaseIn  = parseInt(extraEaseIn);
+                if(extraEaseIn < 0) extraEaseIn = Math.max(extraEaseIn, -this.clientHeight);
+            }
+
+            var extraEaseOut = this.dataset.stickyEaseout;
+            if (extraEaseOut === undefined) extraEaseOut = this.dataset.stickyEaseinout;
+            if (extraEaseOut === undefined && $(this).hasClass("sticky-easeout")) 
+                extraEaseOut = Sticky.get("easeout");
+
+            if(extraEaseOut !== undefined) {
+
+                // ease-out should not be bigger than the size of the element
+                extraEaseOut = parseInt(extraEaseOut);
+                if(extraEaseOut < 0) extraEaseOut = Math.max(extraEaseOut, -this.clientHeight);
+                
+                // ease-in-out should not overlap
+                if(Math.sign(extraEaseIn) == Math.sign(extraEaseIn)) {
+                    if(extraEaseIn < 0) extraEaseOut = Math.min(extraEaseOut, extraEaseIn);
+                    else extraEaseOut = Math.max(extraEaseOut, extraEaseIn);
+                }
+            }
+
+            // Y = 0 : viewport top = element bottom
+            var top    = this.offsetTop                   - (e.scrollY.top+e.screen.vh); 
+            // Y = 0 : viewport bottom = element top 
+            var bottom = this.offsetTop+this.clientHeight - (e.scrollY.top);             
+            
+            var isBiggerThanViewport = (e.screen.vh < this.clienHeight);
+            var show    = $(this).hasClass("show");
+            var easeIn  = $(this).hasClass("sticky-easein")  && extraEaseIn !== undefined && !show;
+            var easeOut = $(this).hasClass("sticky-easeout") && extraEaseOut !== undefined && show;
+            
+            if(easeIn) {
+
+                var isAbove   = top    - extraEaseIn > 0;
+                var isBelow   = bottom + extraEaseIn < 0;
+                var isBetween = isBiggerThanViewport
+                    ? !isAbove && (top    + this.clientHeight + extraEaseIn > 0) &&
+                      !isBelow && (bottom - this.clientHeight - extraEaseIn < 0) 
+                    : !isAbove && (top    + this.clientHeight + extraEaseIn < 0) &&
+                      !isBelow && (bottom - this.clientHeight - extraEaseIn > 0);
+
+                console.log(show,"IN:",isAbove,isBelow,isBetween);
+                show = (!isAbove && !isBelow);
+            
+            } else if(e.first) show = true;
+
+            if(easeOut) {
+
+                var isAbove   = top    - extraEaseOut > 0;
+                var isBelow   = bottom + extraEaseOut < 0;
+                var isBetween = isBiggerThanViewport
+                    ? !isAbove && (top    + this.clientHeight + extraEaseOut > 0) &&
+                      !isBelow && (bottom - this.clientHeight - extraEaseOut < 0) 
+                    : !isAbove && (top    + this.clientHeight + extraEaseOut < 0) &&
+                      !isBelow && (bottom - this.clientHeight - extraEaseOut > 0);
+
+                console.log(show,"OUT:",isAbove,isBelow,isBetween);
+                show = !isAbove && !isBelow;
+              }
+
+            // if(extraEaseIn !== undefined && !show) {
+
+            //     if(top < 0 && top < -this.clientHeight) {
+            //         show = true;
+            //         console.log("is in");
+            //     } else if(top < 0) console.log("from top");
+            //     else if(top < -this.clientHeight) console.log("from bottom");
+                
+            //     //    if(bottom > - extraEaseIn && bottom < this.clientHeight) show = true;
+            //     //else if(top < extraEaseIn && top > -this.clientHeight) show = true;
+
+            // } else if(e.first) show = true;
+
+            // if(extraEaseOut !== undefined && show) {
+
+            //     if(top > extraEaseOut && top > 0 && bottom > 0) show = false;
+            //     else if(bottom < -extraEaseOut && top < 0 && bottom < 0) show = false;
+            // }
+
+            if(show) $(this).addClass("show");
+            else $(this).removeClass("show");
         });
     }
 
     Sticky.onWheel = function (event) {
-      
+
         // Overscroll detection
         var overscroll = {top:false, right:false, bottom:false, left:false};
         overscroll.top    = Sticky.overscrollTop(event);
@@ -475,25 +630,25 @@ $.fn.serializeObject = function () {
 
         Sticky.set("overscroll", overscroll);
         if(overscroll.top || overscroll.bottom || overscroll.left || overscroll.right)
-            $(document).trigger('scrolldelta');
+            $(document).trigger('scrolldelta.sticky');
 
         // On stop wheel event
         clearTimeout($.data(this, 'timer'));
         $.data(this, 'timer', setTimeout(function() {
-            $(document).trigger('scrolldelta');
-        }, Sticky.get("throttle")));
+            $(document).trigger('scrolldelta.sticky');
+        }, 1000*parseDuration(Sticky.get("throttle"))));
     };
 
     Sticky.onLoad = function ()
     {
-        $(window).on('wheel', Sticky.onWheel);
-        $(window).on('scrolldelta', Sticky.onScrollDelta);    
+        Sticky.reset();
+        $(window).on('wheel.sticky', Sticky.onWheel);
+        $(window).on('scrolldelta.sticky', Sticky.onScrollDelta);    
     }
 
     $(document).ready(function() {
         Sticky.onLoad();
-
-        $(window).trigger("scroll");
+        $(window).trigger("scroll.sticky");
     });
 
     return Sticky;

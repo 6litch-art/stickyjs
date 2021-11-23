@@ -576,7 +576,7 @@ $.fn.serializeObject = function () {
                     : !isAbove && (top    + this.clientHeight + extraEaseIn < 0) &&
                       !isBelow && (bottom - this.clientHeight - extraEaseIn > 0);
 
-                console.log(show,"IN:",isAbove,isBelow,isBetween);
+                //console.log(show,"IN:",isAbove,isBelow,isBetween);
                 show = (!isAbove && !isBelow);
             
             } else if(e.first) show = true;
@@ -591,7 +591,7 @@ $.fn.serializeObject = function () {
                     : !isAbove && (top    + this.clientHeight + extraEaseOut < 0) &&
                       !isBelow && (bottom - this.clientHeight - extraEaseOut > 0);
 
-                console.log(show,"OUT:",isAbove,isBelow,isBetween);
+                //console.log(show,"OUT:",isAbove,isBelow,isBetween);
                 show = !isAbove && !isBelow;
               }
 

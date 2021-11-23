@@ -2,27 +2,31 @@ html {
     scroll-behavior: smooth;
 }
 
-.sticky { transition: all 500ms ease-in-out; }
+.sticky { transition: all 500ms ease-in-out, margin-top 0, margin-bottom 0; }
 .sticky.skip-transition { transition: none; }
+.sticky.show { opacity:1; }
 
 .sticky-top.show { top:0; }
 .sticky-top { 
-	transition: all 500ms ease-in-out;
+	transition: all 250ms ease-in-out;
 	position:fixed; top:0%; 
     z-index:auto;
 }
 
+.sticky-bottom.show { bottom:0; }
+.sticky-bottom { transition: all 800ms ease-in-out; }
+.sticky-bottom { position:fixed; bottom:-100vh; }
+
+.sticky-widget.show { opacity:1; }
 .sticky-widget { 
-	transition: all 500ms ease-in-out;
     position:-webkit-sticky;
 	position:sticky;
-    top:0;
-    opacity:0;
+    top: 0;
 }
 
-.sticky-bottom { 
-	transition: all 250ms ease-in-out;
-}
+.sticky-easein.show { opacity:1; }
+.sticky-easein { opacity:0; }
 
-.sticky-bottom.show { bottom:0; }
-.sticky-bottom { position:fixed; bottom:-100vh; }
+.sticky-easeout.show { opacity:1; }
+.sticky-easeout { opacity:0; }
+

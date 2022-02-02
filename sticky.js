@@ -10,12 +10,13 @@ jQuery.event.special.scrolldelta = {
         var ret = null;
         var elem = event.target;
 
+        // console.log(targetData);
         if (targetData.elastic && targetData.interval === undefined) {
 
             targetData.eventListener = elem.addEventListener('scrolldelta.sticky:holding', function (e) {
-    
+
                 if(event.scrollT === undefined) {
-                    
+
                     targetData.time0 = {
                         top:new Date().getTime(), 
                         left:new Date().getTime(), 
@@ -67,7 +68,7 @@ jQuery.event.special.scrolldelta = {
                     targetData.time  = undefined;
                 }
 
-            }, Sticky.get("throttle"));
+            }, 1000*Sticky.parseDuration(Sticky.get("throttle")));
         }
 
         event = Sticky.compute(event, targetData);
@@ -137,7 +138,7 @@ $.fn.serializeObject = function () {
         "easedelay": "0s"
     };
 
-    var parseDuration = function(str) { 
+    var parseDuration = Sticky.parseDuration = function(str) { 
 
         if(String(str).endsWith("ms")) return parseFloat(String(str))/1000;
         return parseFloat(String(str));
@@ -194,16 +195,16 @@ $.fn.serializeObject = function () {
     };
 
     Sticky.remove = function(key, value) {
-    
+
         if(key in Sticky.settings) {
-        
+
             Sticky.settings[key] = Sticky.settings[key].filter(function(setting, index, arr){ 
                 return value != setting;
             });
 
             return Sticky.settings[key];
         }
-        
+
         return null;
     };
 
@@ -236,8 +237,8 @@ $.fn.serializeObject = function () {
 
         // Screen & viewport positioning
         targetData.first  = first;
-        targetData.vw     = Math.round(Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0));
-        targetData.vh     = Math.round(Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0));
+        targetData.vw     = Math.round(Math.min(document.documentElement.clientWidth || 0, window.innerWidth || 0));
+        targetData.vh     = Math.round(Math.min(document.documentElement.clientHeight || 0, window.innerHeight || 0));
         targetData.pw     = $(document).width();
         targetData.ph     = $(document).height();
         targetData.width  = elem.clientWidth;
@@ -245,10 +246,10 @@ $.fn.serializeObject = function () {
 
         // Scrolling information
         targetData.top    = window.scrollY;
-        targetData.bottom = $(document).height() - window.scrollY - targetData.vh;
+        targetData.bottom = targetData.ph - window.scrollY - targetData.vh;
         targetData.left   = window.scrollX;
-        targetData.right  = $(document).width()  - window.scrollX - targetData.vw;
-        
+        targetData.right  = targetData.pw  - window.scrollX - targetData.vw;
+
         if(first) {
 
             top    = targetData.top;
@@ -437,10 +438,10 @@ $.fn.serializeObject = function () {
             if(e.scrollT.delta.bottom > 1000*parseDuration(Sticky.get("threshold"))/4) $(this).addClass("hint");
             else if(e.scrollT.delta.top > 1000*parseDuration(Sticky.get("threshold"))/4) $(this).addClass("hint");
             
-            if($(this).hasClass("show")) {
+            if($(this).hasClass("show")) {
 
                 // Action element
-                if (e.scrollY.bottom > this.clientHeight || e.scrollT.delta.top > Sticky.get("throttle")) {
+                if (e.scrollY.bottom > this.clientHeight || e.scrollT.delta.top > parseDuration(Sticky.get("throttle"))) {
 
                     $(this).removeClass("show");
                     $(this).removeClass("hint");
@@ -576,7 +577,6 @@ $.fn.serializeObject = function () {
                     : !isAbove && (top    + this.clientHeight + extraEaseIn < 0) &&
                       !isBelow && (bottom - this.clientHeight - extraEaseIn > 0);
 
-                //console.log(show,"IN:",isAbove,isBelow,isBetween);
                 show = (!isAbove && !isBelow);
             
             } else if(e.first) show = true;
@@ -591,28 +591,8 @@ $.fn.serializeObject = function () {
                     : !isAbove && (top    + this.clientHeight + extraEaseOut < 0) &&
                       !isBelow && (bottom - this.clientHeight - extraEaseOut > 0);
 
-                //console.log(show,"OUT:",isAbove,isBelow,isBetween);
                 show = !isAbove && !isBelow;
               }
-
-            // if(extraEaseIn !== undefined && !show) {
-
-            //     if(top < 0 && top < -this.clientHeight) {
-            //         show = true;
-            //         console.log("is in");
-            //     } else if(top < 0) console.log("from top");
-            //     else if(top < -this.clientHeight) console.log("from bottom");
-                
-            //     //    if(bottom > - extraEaseIn && bottom < this.clientHeight) show = true;
-            //     //else if(top < extraEaseIn && top > -this.clientHeight) show = true;
-
-            // } else if(e.first) show = true;
-
-            // if(extraEaseOut !== undefined && show) {
-
-            //     if(top > extraEaseOut && top > 0 && bottom > 0) show = false;
-            //     else if(bottom < -extraEaseOut && top < 0 && bottom < 0) show = false;
-            // }
 
             if(show) $(this).addClass("show");
             else $(this).removeClass("show");

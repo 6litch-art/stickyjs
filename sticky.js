@@ -10,7 +10,6 @@ jQuery.event.special.scrolldelta = {
         var ret = null;
         var elem = event.target;
 
-        // console.log(targetData);
         if (targetData.elastic && targetData.interval === undefined) {
 
             targetData.eventListener = elem.addEventListener('scrolldelta.sticky:holding', function (e) {
@@ -577,6 +576,7 @@ $.fn.serializeObject = function () {
                     : !isAbove && (top    + this.clientHeight + extraEaseIn < 0) &&
                       !isBelow && (bottom - this.clientHeight - extraEaseIn > 0);
 
+                if(debug) console.log(show,"Sticky ease-in:",isAbove,isBelow,isBetween);
                 show = (!isAbove && !isBelow);
             
             } else if(e.first) show = true;
@@ -591,6 +591,7 @@ $.fn.serializeObject = function () {
                     : !isAbove && (top    + this.clientHeight + extraEaseOut < 0) &&
                       !isBelow && (bottom - this.clientHeight - extraEaseOut > 0);
 
+                if(debug) console.log(show,"Sticky ease-out:",isAbove,isBelow,isBetween);
                 show = !isAbove && !isBelow;
               }
 

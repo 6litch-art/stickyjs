@@ -38,7 +38,7 @@ jQuery.event.special.scrolldelta = {
 
             targetData.interval = setInterval(function () {
         
-                if (targetData.time === undefined)
+                if (targetData.time === undefined|| !targetData.elastic)
                     targetData.time = {};
     
                 targetData.time.top     = targetData.topElastic    ? new Date().getTime()    : undefined;
@@ -46,7 +46,7 @@ jQuery.event.special.scrolldelta = {
                 targetData.time.left    = targetData.leftElastic   ? new Date().getTime()    : undefined;
                 targetData.time.right   = targetData.rightElastic  ? new Date().getTime()    : undefined;
 
-                if (targetData.time0 === undefined)
+                if (targetData.time0 === undefined|| !targetData.elastic)
                     targetData.time0 = {};
 
                 targetData.time0.top    = targetData.topElastic    ? targetData.time0.top    : undefined;
@@ -117,7 +117,7 @@ $.fn.serializeObject = function () {
         //
         // Time control
         "throttle": "250ms",
-        "threshold": "3000ms",
+        "threshold": "5000ms",
 
         //
         // Manual overscroll detection (browser compatibility, e.g. scroll event missing with Firefox)
@@ -300,7 +300,7 @@ $.fn.serializeObject = function () {
         targetData.elastic = targetData.topElastic || targetData.bottomElastic || targetData.leftElastic || targetData.rightElastic;
 
         // Timing information
-        if (targetData.time0 === undefined)
+        if (targetData.time0 === undefined || !targetData.elastic)
             targetData.time0 = {};
     
         targetData.time0.top    = targetData.time0.top    || new Date().getTime();
@@ -308,7 +308,7 @@ $.fn.serializeObject = function () {
         targetData.time0.left   = targetData.time0.left   || new Date().getTime();
         targetData.time0.right  = targetData.time0.right  || new Date().getTime();
 
-        if (targetData.time === undefined)
+        if (targetData.time === undefined || !targetData.elastic)
             targetData.time = {};
 
         targetData.time.top     = targetData.time.top     || targetData.time0.top;
@@ -329,7 +329,6 @@ $.fn.serializeObject = function () {
         event.deltaX = dX;
         event.deltaY = dY;
         event.deltaT = dT;
-
         event.first  = first;
         event.reset  = (
             dX        == 0 && dY       == 0 &&
@@ -380,7 +379,8 @@ $.fn.serializeObject = function () {
     }  
     Sticky.overscrollBottom = function(event) { 
         var deltaY = (event.deltaY !== undefined ? event.deltaY : event.originalEvent.deltaY);
-        return /*$(window).height() != $(document).height() &&*/ Math.ceil(window.scrollY + $(window).height()) >= $(document).height() && deltaY > 0;
+        var vh = Math.round(Math.min(document.documentElement.clientHeight || 0, window.innerHeight || 0));
+        return /*$(window).height() != $(document).height() &&*/ Math.ceil(window.scrollY + vh) >= $(document).height() && deltaY > 0;
     }
     Sticky.overscrollLeft   = function(event) { 
         var deltaX = (event.deltaX !== undefined ? event.deltaX : event.originalEvent.deltaX);
@@ -388,7 +388,8 @@ $.fn.serializeObject = function () {
     }
     Sticky.overscrollRight  = function(event) { 
         var deltaX = (event.deltaX !== undefined ? event.deltaX : event.originalEvent.deltaX);
-        return /*$(window).width() != $(document).width() &&*/ Math.ceil(window.scrollX + $(window).width()) >= $(document).width() && deltaX > 0;
+        var vw = Math.round(Math.min(document.documentElement.clientWidth || 0, window.innerWidth || 0));
+        return /*$(window).width() != $(document).width() &&*/ Math.ceil(window.scrollX + vw) >= $(document).width() && deltaX > 0;
     }
 
     Sticky.onScrollDelta = function (e) {
@@ -626,6 +627,9 @@ $.fn.serializeObject = function () {
         $(window).on('wheel.sticky', Sticky.onWheel);
         $(window).on('scrolldelta.sticky', Sticky.onScrollDelta);    
     }
+
+    $(window).blur(function() {Sticky.reset(); });
+    $(window).focus(function() { Sticky.reset(); });
 
     $(document).ready(function() {
         Sticky.onLoad();

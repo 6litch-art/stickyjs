@@ -128,6 +128,8 @@ $.fn.serializeObject = function () {
             "right":false,
         },
 
+        "smoothscroll": 'a[href*="#"]',
+
         // Ease in/out related variables
         // NB: if easein|easeout > 0 => additional margin
         //     else it enters into the element (equiv. negative margin..)
@@ -148,7 +150,7 @@ $.fn.serializeObject = function () {
     Sticky.reset = function() {
 
         var targetData = jQuery.data(document);
-
+        
         Object.keys(targetData).forEach(function(key) {
             delete targetData[key];
         });
@@ -398,8 +400,12 @@ $.fn.serializeObject = function () {
 
         $(".sticky-top").each(function() {
 
-            if(e.first) return;
-            if(e.scrollY.top > this.clientHeight || $(this).hasClass("show")) {
+            if(e.first) {
+            
+                $(this).addClass("show");
+                $(this).removeAttr("style");
+
+            } else if(e.scrollY.top > this.clientHeight || $(this).hasClass("show")) {
 
                 // Prevent element shaking
                 if(Sticky.get("transition") && Sticky.get("transition").indexOf(this) !== -1) return;
@@ -628,8 +634,10 @@ $.fn.serializeObject = function () {
         $(window).on('scrolldelta.sticky', Sticky.onScrollDelta);    
     }
 
-    $(window).blur(function() {Sticky.reset(); });
+    $(window).blur(function()  { Sticky.reset(); });
     $(window).focus(function() { Sticky.reset(); });
+
+    $(window).on("hashchange", function() { Sticky.reset(); console.log("hashchange"); });
 
     $(document).ready(function() {
         Sticky.onLoad();

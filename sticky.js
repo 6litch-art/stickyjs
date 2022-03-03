@@ -1,3 +1,28 @@
+(function(namespace) {
+    
+    if ('replaceState' in history) {
+        
+        namespace.replaceHash = function(newhash) {
+
+            if (newhash !== undefined && (''+newhash).charAt(0) !== '#') 
+                newhash = '#' + newhash;
+
+            var state = Object.assign({}, history.state, {href: newhash});
+            history.replaceState(state, '', newhash);
+        }
+
+    } else {
+
+        var hash = location.hash;
+        namespace.replaceHash = function(newhash) {
+
+            if (location.hash !== hash) history.back();
+            location.hash = newhash;
+        };
+    }
+
+})(window);
+
 jQuery.event.special.scrolldelta = {
 
     delegateType: "scroll",
@@ -17,10 +42,10 @@ jQuery.event.special.scrolldelta = {
                 if(event.scrollT === undefined) {
 
                     targetData.time0 = {
-                        top:new Date().getTime(), 
-                        left:new Date().getTime(), 
-                        bottom:new Date().getTime(), 
-                        right:new Date().getTime()
+                        top   :new Date().getTime(), 
+                        left  :new Date().getTime(), 
+                        right :new Date().getTime(),
+                        bottom:new Date().getTime() 
                     };
 
                     targetData.time  = targetData.time || targetData.time0;
@@ -57,6 +82,7 @@ jQuery.event.special.scrolldelta = {
                 var eventHolding = new Event('scrolldelta.sticky:holding');
                 if(targetData.elastic) elem.dispatchEvent(eventHolding);
                 else {
+
                     if(targetData.eventListener) 
                         elem.removeEventListener(targetData.eventListener);
                     
@@ -70,6 +96,7 @@ jQuery.event.special.scrolldelta = {
             }, 1000*Sticky.parseDuration(Sticky.get("throttle")));
         }
 
+        targetData.first = true;
         event = Sticky.compute(event, targetData);
 
         event.type = handleObj.origType;
@@ -81,6 +108,7 @@ jQuery.event.special.scrolldelta = {
 };
 
 $.fn.serializeObject = function () {
+
     var o = {};
     var a = this.serializeArray();
     $.each(a, function () {
@@ -394,14 +422,72 @@ $.fn.serializeObject = function () {
         return /*$(window).width() != $(document).width() &&*/ Math.ceil(window.scrollX + vw) >= $(document).width() && deltaX > 0;
     }
 
+    function getElementOffset(el) {
+        
+        const rect = el.getBoundingClientRect();
+        return {left: rect.left + window.scrollX, top: rect.top + window.scrollY};
+    }
+
+    function getScrollPadding() {
+
+        var style  = window.getComputedStyle($("html")[0]);
+
+        var dict = {};
+            dict["top"] = parseInt(style["scroll-padding-top"]);
+            dict["left"] = parseInt(style["scroll-padding-left"]);
+        
+        if(isNaN(dict["top"])) dict["top"] = 0;
+        if(isNaN(dict["left"])) dict["left"] = 0;
+
+        return dict;
+    }
+
+    var currentHash = window.location.hash;
     Sticky.onScrollDelta = function (e) {
 
         if (debug) console.log("Sticky delta scrolling.. ", e.scrollY, e.scrollX, e.scrollT, e.screen);
 
+        $(".sticky-headlines").each(function() {
+
+            var el = $(this.querySelectorAll('*[id]')).filter(function() {
+
+                if(this === $(Settings.identifier)) return false;
+                if(this === Transparent.loader       ) return false;
+                
+                return getElementOffset(this).top - getScrollPadding().top - window.scrollY <= 0;
+
+            }).sort(function (el1, el2) {
+
+                return getElementOffset(el1).top > getElementOffset(el2).top ? -1 
+                    : (getElementOffset(el1).top < getElementOffset(el2).top ?  1 : 0);
+
+            })
+
+            if(el.length !== 0) {
+
+                var hash = "#" + el[0].getAttribute("id");
+                if(e.first || currentHash != hash) {
+
+                    $(currentHash).removeClass("highlight");
+                    $('a[href^=\''+currentHash+'\']').removeClass("highlight");
+
+                    $(hash).addClass("highlight");
+                    $('a[href^=\''+hash+'\']').addClass("highlight");
+
+                    window.replaceHash(hash);
+
+                    currentHash = hash;
+                }
+            }
+        });
+
         $(".sticky-top").each(function() {
 
-            if(e.first) {
-            
+            var scrollProgrammatically = (e.target === window   && e.scrollY.delta == 0) || 
+                                         (e.target === document && e.scrollY.delta == e.scrollY.top);
+
+            if(e.first || scrollProgrammatically) {
+
                 $(this).addClass("show");
                 $(this).removeAttr("style");
 
@@ -496,8 +582,11 @@ $.fn.serializeObject = function () {
             var offsetBottom  = Math.max(parseInt($(this).css("margin-bottom")), parseInt($(lastChild).css("margin-bottom")));
                 offsetBottom -= extraOffsetBottom;
 
-            $(this).css("margin-bottom", offsetBottom + extraOffsetBottom);
-            $(lastChild).css("margin-bottom", 0);
+            if(firstChild !== lastChild) {
+
+                $(this).css("margin-bottom", offsetBottom + extraOffsetBottom);
+                $(lastChild).css("margin-bottom", 0);
+            }
         });
 
         $(".sticky-easein, .sticky-easeout").each(function() {
@@ -626,23 +715,26 @@ $.fn.serializeObject = function () {
             $(document).trigger('scrolldelta.sticky');
         }, 1000*parseDuration(Sticky.get("throttle"))));
     };
-
+    
     Sticky.onLoad = function ()
     {
         Sticky.reset();
         $(window).on('wheel.sticky', Sticky.onWheel);
         $(window).on('scrolldelta.sticky', Sticky.onScrollDelta);    
+
+        $(window).on('scroll', Sticky.onScroll);
+        $(window).blur(function()  { Sticky.reset(); });
+        $(window).focus(function() { Sticky.reset(); });
     }
 
-    $(window).blur(function()  { Sticky.reset(); });
-    $(window).focus(function() { Sticky.reset(); });
+    
+    $(window).on("hashchange", function(e) { Sticky.reset(); });
 
-    $(window).on("hashchange", function() { Sticky.reset(); console.log("hashchange"); });
-
-    $(document).ready(function() {
+    $(window).on("load", function() {
         Sticky.onLoad();
         $(window).trigger("scroll.sticky");
     });
 
+    
     return Sticky;
 });

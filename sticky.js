@@ -450,7 +450,7 @@ $.fn.serializeObject = function () {
         $(".sticky-headlines").each(function() {
 
             var el = $(this.querySelectorAll('*[id]')).filter(function() {
-
+                
                 if(this === $(Settings.identifier)) return false;
                 if(this === Transparent.loader       ) return false;
                 
@@ -463,6 +463,7 @@ $.fn.serializeObject = function () {
 
             })
 
+            console.log(el);
             if(el.length !== 0) {
 
                 var hash = "#" + el[0].getAttribute("id");
@@ -661,7 +662,7 @@ $.fn.serializeObject = function () {
             var show    = $(this).hasClass("show");
             var easeIn  = $(this).hasClass("sticky-easein")  && extraEaseIn !== undefined && !show;
             var easeOut = $(this).hasClass("sticky-easeout") && extraEaseOut !== undefined && show;
-            
+
             if(easeIn) {
 
                 var isAbove   = top    - extraEaseIn > 0;
@@ -727,7 +728,6 @@ $.fn.serializeObject = function () {
         $(window).focus(function() { Sticky.reset(); });
     }
 
-    
     $(window).on("hashchange", function(e) { Sticky.reset(); });
 
     $(window).on("load", function() {

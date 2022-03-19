@@ -4,11 +4,12 @@
         
         namespace.replaceHash = function(newhash) {
 
-            if (newhash !== undefined && (''+newhash).charAt(0) !== '#') 
+            if (!newhash) newhash = "";
+            if (newhash !== "" && (''+newhash).charAt(0) !== '#') 
                 newhash = '#' + newhash;
 
-            var state = Object.assign({}, history.state, {href: newhash});
-            history.replaceState(state, '', newhash);
+            var state = Object.assign({}, history.state, {href: location.origin+location.pathname+newhash});
+            history.replaceState(state, '', location.origin+location.pathname+newhash);
         }
 
     } else {
@@ -62,10 +63,10 @@ jQuery.event.special.scrolldelta = {
             }, false);
 
             targetData.interval = setInterval(function () {
-        
+
                 if (targetData.time === undefined|| !targetData.elastic)
                     targetData.time = {};
-    
+
                 targetData.time.top     = targetData.topElastic    ? new Date().getTime()    : undefined;
                 targetData.time.bottom  = targetData.bottomElastic ? new Date().getTime()    : undefined;
                 targetData.time.left    = targetData.leftElastic   ? new Date().getTime()    : undefined;
@@ -85,7 +86,7 @@ jQuery.event.special.scrolldelta = {
 
                     if(targetData.eventListener) 
                         elem.removeEventListener(targetData.eventListener);
-                    
+
                     clearInterval(targetData.interval);
                     targetData.interval = undefined;
 
@@ -156,6 +157,8 @@ $.fn.serializeObject = function () {
             "right":false,
         },
 
+        "scrollsnap": true,
+        "scrollsnap_proximity": 0.75,
         "smoothscroll": 'a[href*="#"]',
 
         // Ease in/out related variables
@@ -169,8 +172,14 @@ $.fn.serializeObject = function () {
 
     var parseDuration = Sticky.parseDuration = function(str) { 
 
-        if(String(str).endsWith("ms")) return parseFloat(String(str))/1000;
-        return parseFloat(String(str));
+        var array = String(str).split(", ");
+            array = array.map(function(t) {
+
+                if(String(t).endsWith("ms")) return parseFloat(String(t))/1000;
+                return parseFloat(String(t));    
+            });
+
+        return Math.max(...array);
     }
 
     var debug = false;
@@ -178,11 +187,32 @@ $.fn.serializeObject = function () {
     Sticky.reset = function() {
 
         var targetData = jQuery.data(document);
-        
+
         Object.keys(targetData).forEach(function(key) {
             delete targetData[key];
         });
     }
+
+    Sticky.debounce = function(func, wait, immediate) {
+
+        var timeout;
+
+        return function() {
+
+            var context = this, args = arguments;
+            var later = function() {
+
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
 
     Sticky.ready = function (options = {}) {
 
@@ -249,7 +279,7 @@ $.fn.serializeObject = function () {
 
         return this;
     };
-
+    
     Sticky.compute = function(event) {
 
         var targetData = jQuery.data(document);
@@ -257,15 +287,16 @@ $.fn.serializeObject = function () {
         var elem = event.target;
         if (elem === window  ) elem = document.documentElement;
         if (elem === document) elem = document.documentElement;
-
-        var first   = (Object.keys(targetData).length === 0);
-        var top     = targetData.top    || 0;
-        var left    = targetData.left   || 0;
-        var bottom  = targetData.bottom || 0;
-        var right   = targetData.right  || 0;
+        
+        var first  = (Object.keys(targetData).length === 0);
+        var top    = targetData.top    || 0;
+        var left   = targetData.left   || 0;
+        var bottom = targetData.bottom || 0;
+        var right  = targetData.right  || 0;
 
         // Screen & viewport positioning
         targetData.first  = first;
+
         targetData.vw     = Math.round(Math.min(document.documentElement.clientWidth || 0, window.innerWidth || 0));
         targetData.vh     = Math.round(Math.min(document.documentElement.clientHeight || 0, window.innerHeight || 0));
         targetData.pw     = $(document).width();
@@ -373,10 +404,10 @@ $.fn.serializeObject = function () {
         }
 
         event.screen = {
-            "height" : targetData.height,
-            "width"  : targetData.width,
-            "vh"     : targetData.vh,
-            "vw"     : targetData.vw,
+            "height"     : targetData.height,
+            "width"      : targetData.width,
+            "vh"         : targetData.vh,
+            "vw"         : targetData.vw,
         };
         
         event.scrollX = {
@@ -397,7 +428,6 @@ $.fn.serializeObject = function () {
             "bottom"        : targetData.bottom,
             "bottomCounter" : targetData.bottomCounter,
             "bottomElastic" : targetData.bottomElastic,
-            
         };
 
         return event;
@@ -422,12 +452,6 @@ $.fn.serializeObject = function () {
         return /*$(window).width() != $(document).width() &&*/ Math.ceil(window.scrollX + vw) >= $(document).width() && deltaX > 0;
     }
 
-    function getElementOffset(el) {
-        
-        const rect = el.getBoundingClientRect();
-        return {left: rect.left + window.scrollX, top: rect.top + window.scrollY};
-    }
-
     function getScrollPadding() {
 
         var style  = window.getComputedStyle($("html")[0]);
@@ -442,52 +466,78 @@ $.fn.serializeObject = function () {
         return dict;
     }
 
+    function getScrollSnap(el = undefined)
+    {
+        var style  = window.getComputedStyle(el ? el : $("html")[0]);
+        var scrollSnapType = style["scroll-snap-type"] ?? "";
+            scrollSnapType = scrollSnapType.split(" ");
+
+        var hasX = scrollSnapType.includes("x") || scrollSnapType.includes("both");
+        var hasY = scrollSnapType.includes("y") || scrollSnapType.includes("both");
+    
+        return {
+            x: hasX ? scrollSnapType.includes("mandatory") ? "mandatory" : "proximity" : false,
+            y: hasY ? scrollSnapType.includes("mandatory") ? "mandatory" : "proximity" : false
+        };
+    }
+
+    var anchorY = 0;
+    $(document).on('click', 'a[href^="#"]', function () { anchorY = this.offsetTop - getScrollPadding().top; });
+
     var currentHash = window.location.hash;
     Sticky.onScrollDelta = function (e) {
 
         if (debug) console.log("Sticky delta scrolling.. ", e.scrollY, e.scrollX, e.scrollT, e.screen);
+        $(".sticky-magnetic, .sticky-snap").each(function() {
+
+            
+            var scrollSnap = Sticky.get("scrollsnap") ? getScrollSnap(this.closest(".sticky")) : false;
+            if(debug) console.log(show,"Sticky magnetic:", scrollSnap);
+
+            if(!scrollSnap) return;
+            
+            console.log();
+        });
 
         $(".sticky-headlines").each(function() {
 
+            var hash = null;
+            if(debug) console.log(show,"Sticky headlines:", $(this.querySelectorAll('*[id]')));
             var el = $(this.querySelectorAll('*[id]')).filter(function() {
-                
+
                 if(this === $(Settings.identifier)) return false;
                 if(this === Transparent.loader       ) return false;
                 
-                return getElementOffset(this).top - getScrollPadding().top - window.scrollY <= 0;
+                return this.offsetTop - getScrollPadding().top - window.scrollY <= 0;
 
             }).sort(function (el1, el2) {
 
-                return getElementOffset(el1).top > getElementOffset(el2).top ? -1 
-                    : (getElementOffset(el1).top < getElementOffset(el2).top ?  1 : 0);
+                return el1.offsetTop > el2.offsetTop ? -1 
+                    : (el1.offsetTop < el2.offsetTop ?  1 : 0);
+            });
 
-            })
+            if(el.length !== 0) 
+                hash = "#" + el[0].getAttribute("id");
 
-            console.log(el);
-            if(el.length !== 0) {
+            if(e.first || currentHash != hash) {
 
-                var hash = "#" + el[0].getAttribute("id");
-                if(e.first || currentHash != hash) {
+                $(currentHash).removeClass("highlight");
+                $('a[href^=\''+currentHash+'\']').removeClass("highlight");
 
-                    $(currentHash).removeClass("highlight");
-                    $('a[href^=\''+currentHash+'\']').removeClass("highlight");
-
+                if(hash) {
                     $(hash).addClass("highlight");
                     $('a[href^=\''+hash+'\']').addClass("highlight");
-
-                    window.replaceHash(hash);
-
-                    currentHash = hash;
                 }
+
+                window.replaceHash(hash);
+                currentHash = hash;
             }
         });
 
         $(".sticky-top").each(function() {
 
-            var scrollProgrammatically = (e.target === window   && e.scrollY.delta == 0) || 
-                                         (e.target === document && e.scrollY.delta == e.scrollY.top);
-
-            if(e.first || scrollProgrammatically) {
+            var isAnchor = e.scrollY.top === anchorY;
+            if(e.first || isAnchor) {
 
                 $(this).addClass("show");
                 $(this).removeAttr("style");
@@ -723,12 +773,16 @@ $.fn.serializeObject = function () {
         $(window).on('wheel.sticky', Sticky.onWheel);
         $(window).on('scrolldelta.sticky', Sticky.onScrollDelta);    
 
-        $(window).on('scroll', Sticky.onScroll);
         $(window).blur(function()  { Sticky.reset(); });
         $(window).focus(function() { Sticky.reset(); });
     }
 
     $(window).on("hashchange", function(e) { Sticky.reset(); });
+    $(window).on("onbeforeunload", function() {
+        Sticky.reset(); 
+        $(window).off('wheel.sticky');
+        $(window).off('scrolldelta.sticky');
+    });
 
     $(window).on("load", function() {
         Sticky.onLoad();

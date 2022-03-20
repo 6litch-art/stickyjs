@@ -548,7 +548,7 @@ $.fn.serializeObject = function () {
 
         var magnets = Sticky.getMagnets();
         if(!magnets.length) return;
-
+        
         var scrollSnap = Sticky.get("scrollsnap");
         var scrollSnapStart = Sticky.get("scrollsnap_start");
         var scrollSnapProximity  = Sticky.get("scrollsnap_proximity");
@@ -563,31 +563,35 @@ $.fn.serializeObject = function () {
 
         var magnet = currMagnet;
         var closestMagnets = magnets.filter(function() { return this.visible > scrollSnapProximity; });
-
+        
         if (roll) {
         
             closestMagnets = closestMagnets.filter(function() { 
-                return  this.element.offsetTop  >= window.scrollY && window.scrollY <= this.element.offsetTop + this.element.offsetHeight - 1 && 
-                        this.element.offsetLeft >= window.scrollX && window.scrollX <= this.element.offsetLeft + this.element.offsetWidth - 1; 
+                return  this.element.offsetTop  >= window.scrollY && window.scrollY <= this.element.offsetTop  + this.element.offsetHeight - 1 && 
+                        this.element.offsetLeft >= window.scrollX && window.scrollX <= this.element.offsetLeft + this.element.offsetWidth  - 1; 
             });
 
         } else if(unroll) {
 
             closestMagnets = closestMagnets.filter(function() { 
-                return  this.element.offsetTop  <= window.scrollY && window.scrollY <= this.element.offsetTop  + this.element.offsetHeight - 1 && 
-                        this.element.offsetLeft <= window.scrollX && window.scrollX <= this.element.offsetLeft + this.element.offsetWidth  - 1; 
+                // console.log(this.element.offsetTop, " <= ", window.scrollY+window.clientHeight, window.scrollY+window.clientHeight, "<=", this.element.offsetTop  + this.element.offsetHeight - 1 );
+                // console.log(this.element.offsetTop <= window.scrollY+window.clientHeight, window.scrollY+window.clientHeight <= this.element.offsetTop  + this.element.offsetHeight - 1 );
+                return  this.element.offsetTop  <= window.scrollY+window.clientHeight && window.scrollY+window.clientHeight <= this.element.offsetTop  + this.element.offsetHeight - 1 && 
+                        this.element.offsetLeft <= window.scrollX+window.clientWidth  && window.scrollX+window.clientWidth  <= this.element.offsetLeft + this.element.offsetWidth  - 1; 
             });
         }
-
-        closestMagnets = closestMagnets.filter(function() { return this.visible > scrollSnapProximity; });
         
-        console.log(closestMagnets[0], currMagnet);
         var scrollTo = closestMagnets.length && closestMagnets[0] !== currMagnet;
         if (scrollTo) {
 
             if (closestMagnets.length) magnet = closestMagnets[0];
-            Sticky.scrollTo({top:magnet.offsetTop, left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
+            Sticky.scrollTo({top:magnet.offsetTop, left:magnet.offsetLeft, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
+
+            $(magnets).each((e) => $(magnets[e].element).removeClass("highlight"));
+            $(magnet.element).addClass("highlight");
+            console.log(magnet);
         }
+
     }
 
     Sticky.getMagnets = function ()
@@ -595,11 +599,18 @@ $.fn.serializeObject = function () {
         return $(".sticky-magnet")
             .sort(function (m1, m2) {
                 return m1.offsetTop > m2.offsetTop ? 1 : (m1.offsetTop < m2.offsetTop ?  -1 : 0);
-            }).map(function() { return {
-                element: this, 
-                offsetTop: this.offsetTop, 
-                visible:Math.min(1, Math.max(0, Math.abs((window.scrollY + window.innerHeight - this.offsetTop)/(this.offsetHeight + this.offsetTop))))
-            }});
+            }).map(function() { 
+
+                var scrollTop     = window.scrollY;
+                var scrollBottom  = window.scrollY + window.innerHeight
+                var offsetTop     = this.offsetTop;
+                var offsetBottom  = this.offsetTop + this.offsetHeight;
+                var visibleTop    = offsetTop    < scrollTop    ? scrollTop    : offsetTop;
+                var visibleBottom = offsetBottom > scrollBottom ? scrollBottom : offsetBottom;
+        
+                var visible = (visibleBottom - visibleTop) / this.offsetHeight;
+                return {element: this, offsetTop: this.offsetTop, visible:Math.min(1, Math.max(0, visible)) };
+            });
     }
 
     Sticky.onScrollDelta = function (e) {
@@ -899,6 +910,7 @@ $.fn.serializeObject = function () {
         var scrollSnapResistance = Sticky.get("scrollsnap_resistance"); 
         var scrollSnapThrottle   = 1000*Sticky.parseDuration(scrollSnapResistance > 0 ? 1/scrollSnapResistance : Sticky.get("scrollsnap_throttle") ?? Sticky.get("throttle"));
         $(window).on('scrolldelta.sticky', Sticky.debounce(Sticky.onScrollSnap, scrollSnapThrottle));
+
     }
 
     $(window).on("hashchange", (e) => Sticky.reset());

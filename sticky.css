@@ -1,7 +1,7 @@
 /* Force to disable scroll-behavior: JQuery is handling this part (better control and stability) */
-html { scroll-snap-type: x mandatory; scroll-behavior: unset !important; }
+html { scroll-behavior: unset !important; }
 
-.sticky { scroll-snap-type: y mandatory; transition: all 500ms ease-in-out, margin-top 0, margin-bottom 0; }
+.sticky { transition: all 500ms ease-in-out, margin-top 0, margin-bottom 0; }
 .sticky.skip-transition { transition: none; }
 .sticky.show { opacity:1; }
 

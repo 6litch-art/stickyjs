@@ -147,11 +147,11 @@ $.fn.serializeObject = function () {
 
         "scrollsnap"           : true,
         "scrollsnap_resistance": 10,
-        "scrollsnap_throttle"  : "200ms",
+        "scrollsnap_throttle"  : "50ms",
         "scrollsnap_start"     : "start", //start, center, end
-        "scrollsnap_proximity" : 0.10,
+        "scrollsnap_proximity" : 0.05,
 
-        "smoothscroll": "400ms",
+        "smoothscroll": "300ms",
         "smoothscroll_speed": 0,
         "smoothscroll_easing": "swing",
 
@@ -160,8 +160,9 @@ $.fn.serializeObject = function () {
         //     else it enters into the element (equiv. negative margin..)
         "easein": "100px",
         "easeout": "50px",
-        "easetime": "250ms",
-        "easedelay": "0s"
+        "easetime": "500ms",
+        "easedelay": "0.5s",
+        "easethrottle": "100ms"
     };
 
     Sticky.parseDuration = function(str) { 
@@ -483,8 +484,8 @@ $.fn.serializeObject = function () {
         scrollTop = dict["top"] ?? window.scrollY;
         scrollLeft = dict["left"] ?? window.scrollX;
 
-        duration = 1000*Sticky.parseDuration(dict["duration"]) ?? 200;
-        speed    = parseFloat(dict["speed"]) ?? 0;
+        duration = 1000*Transparent.parseDuration(dict["duration"] ?? 0.2);
+        speed = parseFloat(dict["speed"] ?? 0);
         easing   = dict["easing"] ?? "swing";
         if(speed) {
 
@@ -493,7 +494,10 @@ $.fn.serializeObject = function () {
         }
 
         $("html, body").animate({scrollTop: scrollTop, scrollLeft:scrollLeft}, duration, easing, function() {
+
             callback();
+            if(duration > 0)
+                dispatchEvent(new Event('scroll'));
         });
     }
 
@@ -502,7 +506,7 @@ $.fn.serializeObject = function () {
         var magnets = Sticky.getMagnets();
         if(!magnets.length) return;
 
-        Sticky.scrollTo({top:magnets[0].offsetTop,left:0, easing:Settings["smoothscroll_easing"], duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
+        Sticky.scrollTo({top:magnets[0].offsetTop, left:0, easing:Settings["smoothscroll_easing"], duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
     }
 
     Sticky.onScrollSnapLast = function (e)
@@ -522,7 +526,7 @@ $.fn.serializeObject = function () {
         var magnet = current > 0 ? magnets[current-1] : magnets[current];
         if(!magnet) return;
 
-        Sticky.scrollTo({top:magnet.offsetTop,left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
+        Sticky.scrollTo({top:magnet.offsetTop, left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
     }
 
     Sticky.onScrollSnapNext = function (e)
@@ -534,12 +538,14 @@ $.fn.serializeObject = function () {
         var magnet = current < magnets.length-1 ? magnets[current+1] : magnets[current];
         if(!magnet) return;
 
-        Sticky.scrollTo({top:magnet.offsetTop,left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
+        Sticky.scrollTo({top:magnet.offsetTop, left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
     }
 
     var lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
     Sticky.onScrollSnap = function (e)
     {
+        if(debug) console.log(show,"Sticky magnetic:", scrollSnap, scrollSnapStart, scrollSnapProximity);
+
         var magnets = Sticky.getMagnets();
         if(!magnets.length) return;
 
@@ -547,7 +553,7 @@ $.fn.serializeObject = function () {
         var scrollSnapStart = Sticky.get("scrollsnap_start");
         var scrollSnapProximity  = Sticky.get("scrollsnap_proximity");
 
-        var currentId     = Sticky.closestToZero(magnets.map(function() { return this.offsetTop; }));
+        var currentId     = Sticky.closestToZero(magnets.map(function() { return this.offsetTop-window.scrollY; }));
         var currMagnet = magnets[currentId];
 
         var st = window.pageYOffset || document.documentElement.scrollTop;
@@ -556,31 +562,33 @@ $.fn.serializeObject = function () {
         lastScrollTop = st <= 0 ? 0 : st;
 
         var magnet = currMagnet;
-        var closeMagnets = magnets.filter(function() { return this.visible > scrollSnapProximity; });
+        var closestMagnets = magnets.filter(function() { return this.visible > scrollSnapProximity; });
 
         if (roll) {
         
-            closeMagnets = closeMagnets.filter(function() { 
-                return  this.element.offsetTop  >= window.scrollY && window.scrollY <= this.element.offsetTop + this.element.offsetHeight && 
-                        this.element.offsetLeft >= window.scrollX && window.scrollX <= this.element.offsetLeft + this.element.offsetWidth; 
+            closestMagnets = closestMagnets.filter(function() { 
+                return  this.element.offsetTop  >= window.scrollY && window.scrollY <= this.element.offsetTop + this.element.offsetHeight - 1 && 
+                        this.element.offsetLeft >= window.scrollX && window.scrollX <= this.element.offsetLeft + this.element.offsetWidth - 1; 
             });
 
         } else if(unroll) {
 
-            closeMagnets = closeMagnets.filter(function() { 
-                return  this.element.offsetTop  <= window.scrollY && window.scrollY <= this.element.offsetTop  + this.element.offsetHeight && 
-                        this.element.offsetLeft <= window.scrollX && window.scrollX <= this.element.offsetLeft + this.element.offsetWidth; 
+            closestMagnets = closestMagnets.filter(function() { 
+                return  this.element.offsetTop  <= window.scrollY && window.scrollY <= this.element.offsetTop  + this.element.offsetHeight - 1 && 
+                        this.element.offsetLeft <= window.scrollX && window.scrollX <= this.element.offsetLeft + this.element.offsetWidth  - 1; 
             });
         }
 
-        closeMagnets = closeMagnets.filter(function() { return this.visible > scrollSnapProximity; });
-        if (closeMagnets.length) magnet = closeMagnets[0];
-
-        Sticky.scrollTo({top:magnet.offsetTop, left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
+        closestMagnets = closestMagnets.filter(function() { return this.visible > scrollSnapProximity; });
         
-        if(debug) console.log(show,"Sticky magnetic:", scrollSnap, scrollSnapStart, scrollSnapProximity);
-    }
+        console.log(closestMagnets[0], currMagnet);
+        var scrollTo = closestMagnets.length && closestMagnets[0] !== currMagnet;
+        if (scrollTo) {
 
+            if (closestMagnets.length) magnet = closestMagnets[0];
+            Sticky.scrollTo({top:magnet.offsetTop, left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
+        }
+    }
 
     Sticky.getMagnets = function ()
     {
@@ -590,7 +598,7 @@ $.fn.serializeObject = function () {
             }).map(function() { return {
                 element: this, 
                 offsetTop: this.offsetTop, 
-                visible:Math.abs((this.clientHeight - this.offsetTop - window.scrollY)/this.clientHeight)
+                visible:Math.min(1, Math.max(0, Math.abs((window.scrollY + window.innerHeight - this.offsetTop)/(this.offsetHeight + this.offsetTop))))
             }});
     }
 
@@ -739,7 +747,7 @@ $.fn.serializeObject = function () {
             }
         });
 
-        $(".sticky-easein, .sticky-easeout").each(function() {
+        $(".sticky-easein, .sticky-easeout").each(function(i) {
 
             //
             // Update transition CSS
@@ -760,7 +768,7 @@ $.fn.serializeObject = function () {
                     opacityDelay    = (opacityIndex < 0 ? 0 : Sticky.parseDuration(transitionDelay[opacityIndex]));
 
                 transitionDuration[opacityIndex] = (extraEaseTime  < 0 ? opacityDuration : extraEaseTime);
-                transitionDelay   [opacityIndex] = (extraEaseDelay < 0 ? opacityDelay    : extraEaseDelay);
+                transitionDelay   [opacityIndex] = (extraEaseDelay < 0 ? opacityDelay    : extraEaseDelay) + i*Sticky.parseDuration(Sticky.get("easethrottle"));
 
                 var transition = [];
                 for (var i = 0; i < transitionProperty.length; i++)
@@ -806,7 +814,7 @@ $.fn.serializeObject = function () {
             // Y = 0 : viewport top = element bottom
             var top    = this.offsetTop                   - (e.scrollY.top+e.screen.vh); 
             // Y = 0 : viewport bottom = element top 
-            var bottom = this.offsetTop+this.clientHeight - (e.scrollY.top);             
+            var bottom = this.offsetTop+this.clientHeight - (e.scrollY.top);
             
             var isBiggerThanViewport = (e.screen.vh < this.clienHeight);
             var show    = $(this).hasClass("show");

@@ -1,3 +1,11 @@
+/**
+ * TODO: 
+ * - Implement 2D grid
+ * - Implement goto when click on the element
+ * - Implement start/center/end
+ * - Implement resistant scroll (at the very end..)
+ */
+
 (function(namespace) {
     
     namespace.replaceHash = function(newhash) {
@@ -484,12 +492,12 @@ $.fn.serializeObject = function () {
         scrollTop = dict["top"] ?? window.scrollY;
         scrollLeft = dict["left"] ?? window.scrollX;
 
-        duration = 1000*Transparent.parseDuration(dict["duration"] ?? 0.2);
+        duration = 1000*Sticky.parseDuration(dict["duration"] ?? 0.2);
         speed = parseFloat(dict["speed"] ?? 0);
         easing   = dict["easing"] ?? "swing";
         if(speed) {
 
-            var distance = scrollTop - Transparent.html.offsetTop - window.scrollY;
+            var distance = scrollTop - window.offsetTop - window.scrollY;
             duration = speed ? 1000*distance/speed : duration;
         }
 
@@ -585,11 +593,12 @@ $.fn.serializeObject = function () {
         if (scrollTo) {
 
             if (closestMagnets.length) magnet = closestMagnets[0];
-            Sticky.scrollTo({top:magnet.offsetTop, left:magnet.offsetLeft, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
+            Sticky.scrollTo({top:magnet.offsetTop - getScrollPadding().top, left:magnet.offsetLeft - getScrollPadding().left, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
 
-            $(magnets).each((e) => $(magnets[e].element).removeClass("highlight"));
+            $(magnets).each((e) => $(magnets[e].element).removeClass("highlight closest"));
+            $(closestMagnets).each((e) => $(magnets[e].element).addClass("closest"));
             $(magnet.element).addClass("highlight");
-            console.log(magnet);
+            // console.log(magnet);
         }
 
     }
@@ -601,15 +610,25 @@ $.fn.serializeObject = function () {
                 return m1.offsetTop > m2.offsetTop ? 1 : (m1.offsetTop < m2.offsetTop ?  -1 : 0);
             }).map(function() { 
 
-                var scrollTop     = window.scrollY;
-                var scrollBottom  = window.scrollY + window.innerHeight
+                var scrollTop     = window.scrollY + getScrollPadding().top;
+                var scrollBottom  = window.scrollY + getScrollPadding().top + window.innerHeight
                 var offsetTop     = this.offsetTop;
                 var offsetBottom  = this.offsetTop + this.offsetHeight;
                 var visibleTop    = offsetTop    < scrollTop    ? scrollTop    : offsetTop;
                 var visibleBottom = offsetBottom > scrollBottom ? scrollBottom : offsetBottom;
         
-                var visible = (visibleBottom - visibleTop) / this.offsetHeight;
-                return {element: this, offsetTop: this.offsetTop, visible:Math.min(1, Math.max(0, visible)) };
+                var scrollLeft     = window.scrollX + getScrollPadding().left;
+                var scrollRight  = window.scrollX + getScrollPadding().left + window.innerWidth
+                var offsetLeft     = this.offsetLeft;
+                var offsetRight = this.offsetLeft + this.offsetWidth;
+                var visibleLeft    = offsetLeft    < scrollLeft    ? scrollLeft    : offsetLeft;
+                var visibleRight = offsetRight > scrollRight ? scrollRight : offsetRight;
+        
+                var visibleX = (visibleBottom - visibleTop) / this.offsetHeight;
+                var visibleY = (visibleRight - visibleLeft) / this.offsetWidth;
+                var visible = Math.min(1, Math.max(0, visibleX))*Math.min(1, Math.max(0, visibleY));
+                
+                return {element: this, offsetTop: this.offsetTop, visible:visible };
             });
     }
 
@@ -624,7 +643,6 @@ $.fn.serializeObject = function () {
             var el = $(this.querySelectorAll('*[id]')).filter(function() {
 
                 if(this === $(Settings.identifier)) return false;
-                if(this === Transparent.loader       ) return false;
                 
                 return this.offsetTop - getScrollPadding().top - window.scrollY - 1 <= 0;
 

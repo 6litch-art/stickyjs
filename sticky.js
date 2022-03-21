@@ -3,7 +3,6 @@
  * - Implement 2D grid
  * - Implement goto when click on the element
  * - Implement start/center/end
- * - Implement resistant scroll (at the very end..)
  */
 
 (function(namespace) {
@@ -154,10 +153,9 @@ $.fn.serializeObject = function () {
         },
 
         "scrollsnap"           : true,
-        "scrollsnap_resistance": 10,
-        "scrollsnap_throttle"  : "50ms",
+        "scrollsnap_throttle"  : "25ms",
         "scrollsnap_start"     : "start", //start, center, end
-        "scrollsnap_proximity" : 0.05,
+        "scrollsnap_proximity" : 0.01,
 
         "smoothscroll": "300ms",
         "smoothscroll_speed": 0,
@@ -492,63 +490,81 @@ $.fn.serializeObject = function () {
         scrollTop = dict["top"] ?? window.scrollY;
         scrollLeft = dict["left"] ?? window.scrollX;
 
-        duration = 1000*Sticky.parseDuration(dict["duration"] ?? 0.2);
+        duration = 1000*Sticky.parseDuration(dict["duration"] ?? 0);
         speed = parseFloat(dict["speed"] ?? 0);
-        easing   = dict["easing"] ?? "swing";
+
+        easing = dict["easing"] ?? "swing";
         if(speed) {
 
             var distance = scrollTop - window.offsetTop - window.scrollY;
             duration = speed ? 1000*distance/speed : duration;
         }
 
-        $("html, body").animate({scrollTop: scrollTop, scrollLeft:scrollLeft}, duration, easing, function() {
+        if(duration == 0) {
 
+            document.documentElement.scrollTop = scrollTop;
+            document.documentElement.scrollLeft = scrollLeft;
+
+            dispatchEvent(new Event('scroll'));
             callback();
-            if(duration > 0)
+
+        } else {
+
+            $("html, body").animate({scrollTop: scrollTop, scrollLeft:scrollLeft}, duration, easing, function() {
+
                 dispatchEvent(new Event('scroll'));
-        });
+                callback();
+            });
+        }
     }
 
-    Sticky.onScrollSnapFirst = function (e)
+    Sticky.scrollToFirstSnap = function (e, callback = function() {}) { Sticky.scrollTo({top:Sticky.getFirstSnap().offsetTop, left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]}, callback); }
+    Sticky.getFirstSnap = function (e)
     {
         var magnets = Sticky.getMagnets();
-        if(!magnets.length) return;
+        if(!magnets.length) return window;
 
-        Sticky.scrollTo({top:magnets[0].offsetTop, left:0, easing:Settings["smoothscroll_easing"], duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
+        return magnets[0];
     }
 
-    Sticky.onScrollSnapLast = function (e)
+    Sticky.scrollToLastSnap = function (e, callback = function() {}) { Sticky.scrollTo({top:Sticky.getLastSnap().offsetTop, left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]}, callback); }
+    Sticky.getLastSnap = function (e)
     {
         var magnets = Sticky.getMagnets();
-        if(!magnets.length) return;
+        if(!magnets.length) return window;
 
-        Sticky.scrollTo({top:magnets[magnets.length-1].element.scrollTop,left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
+        return magnets[magnets.length-1];
     }
 
-    Sticky.onScrollSnapPrevious = function (e)
+    Sticky.scrollToSnap = function (e, callback = function() {}) { Sticky.scrollTo({top:Sticky.getSnap().offsetTop, left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]}, callback); }
+    Sticky.getSnap = function (e)
     {
         var magnets = Sticky.getMagnets();
-        if(!magnets.length) return;
+        if(!magnets.length) return window;
+
+        return magnets[Sticky.closestToZero(magnets.map(function() { return this.offsetTop; }))];
+    }
+
+    Sticky.scrollToPreviousSnap = function (e, callback = function() {}) { Sticky.scrollTo({top:Sticky.getPreviousSnap().offsetTop, left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]}, callback); }
+    Sticky.getPreviousSnap = function (e)
+    {
+        var magnets = Sticky.getMagnets();
+        if(!magnets.length) return window;
 
         var current = Sticky.closestToZero(magnets.map(function() { return this.offsetTop; }));
-        var magnet = current > 0 ? magnets[current-1] : magnets[current];
-        if(!magnet) return;
-
-        Sticky.scrollTo({top:magnet.offsetTop, left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
+        return current > 0 ? magnets[current-1] : magnets[current];
     }
 
-    Sticky.onScrollSnapNext = function (e)
+    Sticky.scrollToNextSnap = function (e, callback = function() {}) { Sticky.scrollTo({top:Sticky.getNextSnap().offsetTop, left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]}, callback); }
+    Sticky.getNextSnap = function(e)
     {
         var magnets = Sticky.getMagnets();
-        if(!magnets.length) return;
+        if(!magnets.length) return window;
 
         var current = Sticky.closestToZero(magnets.map(function() { return this.offsetTop; }));
-        var magnet = current < magnets.length-1 ? magnets[current+1] : magnets[current];
-        if(!magnet) return;
-
-        Sticky.scrollTo({top:magnet.offsetTop, left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll"], speed: Settings["smoothscroll_speed"]});
+        return current < magnets.length-1 ? magnets[current+1] : magnets[current];
     }
-
+    
     var lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
     Sticky.onScrollSnap = function (e)
     {
@@ -918,15 +934,12 @@ $.fn.serializeObject = function () {
         });
 
         // Sticky magnet control
-        $(".sticky-magnet-first, .sticky-magnet-fast-backward"                   ).on("click", function() { Sticky.onScrollSnapFirst(); });
-        $(".sticky-magnet-prev, .sticky-magnet-backward, .sticky-magnet-previous").on("click", function() { Sticky.onScrollSnapPrevious(); });
-        $(".sticky-magnet-next, .sticky-magnet-forward"                          ).on("click", function() { Sticky.onScrollSnapNext(); });
-        $(".sticky-magnet-last, .sticky-magnet-fast-forward"                     ).on("click", function() { Sticky.onScrollSnapLast(); });
+        $(".sticky-magnet-first, .sticky-magnet-fast-backward"                   ).on("click", function() { Sticky.scrollToFirstSnap(); });
+        $(".sticky-magnet-prev, .sticky-magnet-backward, .sticky-magnet-previous").on("click", function() { Sticky.scrollToPreviousSnap(); });
+        $(".sticky-magnet-next, .sticky-magnet-forward"                          ).on("click", function() { Sticky.scrollToNextSnap(); });
+        $(".sticky-magnet-last, .sticky-magnet-fast-forward"                     ).on("click", function() { Sticky.scrollToLastSnap(); });
 
-        // Sticky "resistance"
-        // ... Poor-man solution: should better implement a scroll control with resistance
-        var scrollSnapResistance = Sticky.get("scrollsnap_resistance"); 
-        var scrollSnapThrottle   = 1000*Sticky.parseDuration(scrollSnapResistance > 0 ? 1/scrollSnapResistance : Sticky.get("scrollsnap_throttle") ?? Sticky.get("throttle"));
+        var scrollSnapThrottle   = 1000*Sticky.parseDuration(Sticky.get("scrollsnap_throttle") ?? Sticky.get("throttle"));
         $(window).on('scrolldelta.sticky', Sticky.debounce(Sticky.onScrollSnap, scrollSnapThrottle));
 
     }

@@ -170,12 +170,12 @@ $.fn.serializeObject = function () {
         "scrollsnap_proximity" : 0.01   ,
 
         "autoscroll": true,
-        "autoscroll_speed"  : 100    , // pixel/s
-        "autoscroll_easing" : "swing",
+        "autoscroll_speed": 5, // pixel/s
+        "autoscroll_easing": "swing",
 
-        "smoothscroll_duration" : "300ms", // pixel/s
-        "smoothscroll_speed"    : 10     , // pixel/s
-        "smoothscroll_easing"   : "swing",
+        "smoothscroll_duration": "300ms",
+        "smoothscroll_speed": 0, // pixel/s
+        "smoothscroll_easing": "swing",
 
         // Ease in/out related variables
         // NB: if easein|easeout > 0 => additional margin
@@ -990,7 +990,7 @@ $.fn.serializeObject = function () {
         }
 
         // Sticky autoscroll
-        if(Sticky.get("scrollsnap"))
+        if(Sticky.get("autoscroll"))
             $(".sticky-autoscroll").each(Sticky.onAutoscroll);
     }
 

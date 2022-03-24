@@ -153,7 +153,7 @@ $.fn.serializeObject = function () {
         //
         // Time control
         "throttle": "250ms"  ,
-        "threshold": "5000ms",
+        "threshold": "2500ms",
 
         //
         // Manual overscroll detection (browser compatibility, e.g. scroll event missing with Firefox)
@@ -204,7 +204,7 @@ $.fn.serializeObject = function () {
     Sticky.reset = function() {
 
         var targetData = jQuery.data(document);
-        Object.keys(targetData).forEach((key) =>delete targetData[key]);
+        Object.keys(targetData).forEach((key) => delete targetData[key]);
     }
 
     Sticky.autoScroll  = function(el = $("body")) { return Sticky.autoScrollX(el) || Sticky.autoScrollY(el); }
@@ -416,7 +416,7 @@ $.fn.serializeObject = function () {
         );
         
         event.scrollT = {
-            "auto"    : $(elem).data("autoscroll-x") || $(elem).data("autoscroll-y"),
+            "auto"    : ($(elem).data("autoscroll-x") || $(elem).data("autoscroll-y")) ?? false,
             "delta"   : dT,
             "t0"      : targetData.time0,
             "elastic" : targetData.elastic
@@ -430,7 +430,7 @@ $.fn.serializeObject = function () {
         };
         
         event.scrollX = {
-            "auto"         : $(elem).data("autoscroll-x"),
+            "auto"         : $(elem).data("autoscroll-x") ?? false,
             "delta"        : dX,
             "left"         : targetData.left,
             "leftCounter"  : targetData.leftCounter,
@@ -441,7 +441,7 @@ $.fn.serializeObject = function () {
         };
 
         event.scrollY = {
-            "auto"          : $(elem).data("autoscroll-y"),
+            "auto"          : $(elem).data("autoscroll-y") ?? false,
             "delta"         : dY,
             "top"           : targetData.top,
             "topCounter"    : targetData.topCounter,
@@ -588,6 +588,11 @@ $.fn.serializeObject = function () {
         return current < magnets.length-1 ? magnets[current+1] : magnets[current];
     }
     
+    Sticky.onScrollDebounce = function(e)
+    {
+        Sticky.reset();
+    }
+
     var lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
     Sticky.onScrollSnap = function (e)
     {
@@ -967,6 +972,10 @@ $.fn.serializeObject = function () {
         Sticky.reset();
         $(window).on('wheel.sticky', Sticky.onWheel);
         $(window).on('scrolldelta.sticky', Sticky.onScrollDelta);
+
+        var throttle = 1000*Sticky.parseDuration(Sticky.get("throttle"));
+        $(window).on('scrolldelta.sticky', Sticky.debounce(Sticky.onScrollDebounce, throttle));
+
         $(window).blur( () => Sticky.reset());
         $(window).focus(() => Sticky.reset());
 

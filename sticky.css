@@ -1,20 +1,28 @@
 /* Force to disable scroll-behavior: JQuery is handling this part (better control and stability) */
 html { scroll-behavior: unset !important; }
 
-.sticky { transition: all 500ms ease-in-out, margin-top 0, margin-bottom 0; }
+.sticky { transition: margin 200ms ease-in-out, top 400ms ease-in-out, right 400ms ease-in-out, bottom 400ms ease-in-out, left 400ms ease-in-out; }
 .sticky.skip-transition { transition: none; }
 .sticky.show { opacity:1; }
 
 .sticky-top.show { top:0; }
 .sticky-top { 
 	transition: all 250ms ease-in-out;
-	position:fixed; top:0%; 
     z-index:auto;
+
+    position: -webkit-sticky;
+    position: sticky;
+    top: 0;
+
+    align-self: flex-start;
 }
 
 .sticky-bottom.show { bottom:0; }
-.sticky-bottom { transition: all 800ms ease-in-out; }
-.sticky-bottom { position:fixed; bottom:-100vh; }
+.sticky-bottom.hint { margin-top:-25%; }
+.sticky-bottom {
+
+    position:fixed; bottom:-100%;
+}
 
 .sticky-widget.show { opacity:1; }
 .sticky-widget { 

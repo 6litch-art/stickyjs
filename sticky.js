@@ -592,26 +592,14 @@ $.fn.serializeObject = function () {
         var magnet = currMagnet;
         var closestMagnets = magnets.filter(function() { return this.visible > scrollSnapProximity; });
         
-        if (roll) {
-        
-            closestMagnets = closestMagnets.filter(function() { 
-                return  this.element.offsetTop  >= window.scrollY && window.scrollY <= this.element.offsetTop  + this.element.offsetHeight - 1 && 
-                        this.element.offsetLeft >= window.scrollX && window.scrollX <= this.element.offsetLeft + this.element.offsetWidth  - 1; 
-            });
+        var scrollTo = false
+             if  (roll) closestMagnets = closestMagnets.filter(function() { return this.element.offsetTop                             >= window.scrollY && this.element.offsetLeft                            >= window.scrollX; });
+        else if(unroll) closestMagnets = closestMagnets.filter(function() { return this.element.offsetTop + this.element.offsetHeight >= window.scrollY && this.element.offsetLeft + this.element.offsetWidth >= window.scrollX; }); 
 
-        } else if(unroll) {
-
-            closestMagnets = closestMagnets.filter(function() { 
-                return  this.element.offsetTop  <= window.scrollY+window.clientHeight && window.scrollY+window.clientHeight <= this.element.offsetTop  + this.element.offsetHeight - 1 && 
-                        this.element.offsetLeft <= window.scrollX+window.clientWidth  && window.scrollX+window.clientWidth  <= this.element.offsetLeft + this.element.offsetWidth  - 1; 
-            });
-        }
-        
-        var scrollTo = closestMagnets.length && closestMagnets[0] !== currMagnet;
+        scrollTo = closestMagnets.length && closestMagnets[0] !== currMagnet;
         if (scrollTo) {
 
             if (closestMagnets.length) magnet = closestMagnets[0];
-
             Sticky.scrollTo({top:magnet.offsetTop - Sticky.getScrollPadding().top, left:magnet.offsetLeft - Sticky.getScrollPadding().left, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll_duration"], speed: Settings["smoothscroll_speed"]});
 
             $(magnets).each((e) => $(magnets[e].element).removeClass("magnet closest"));

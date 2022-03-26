@@ -54,7 +54,7 @@ $.fn.serializeObject = function () {
     return o;
 };
 
-;
+
 (function (root, factory) {
 
     if (typeof define === 'function' && define.amd) {
@@ -124,6 +124,43 @@ $.fn.serializeObject = function () {
             });
 
         return Math.max(...array);
+    }
+
+    Sticky.remToPixel     = function(rem)     { return parseFloat(rem) * parseFloat(getComputedStyle(document.documentElement).fontSize); }
+    Sticky.emToPixel      = function(em, el)  { return parseFloat(em ) * parseFloat(getComputedStyle(el.parentElement).fontSize); }
+    Sticky.percentToPixel = function(p , el)  { return parseFloat(p  ) * el.outerWidth(); }
+    Sticky.parseToPixel   = function(str, el) { 
+
+        if(str === undefined) return undefined;
+
+        var array = String(str).split(", ");
+            array = array.map(function(s) {
+
+                     if(s.endsWith("rem")) return Sticky.remToPixel    (s);
+                else if(s.endsWith("em") ) return Sticky.emToPixel     (s, el);
+                else if(s.endsWith("%")  ) return Sticky.percentToPixel(s, el);
+                return parseFloat(s);
+            });
+
+        return Math.max(...array);
+    }
+
+    Sticky.getScrollPadding = function(el = undefined) {
+
+        var style  = window.getComputedStyle(el == undefined ? $("html")[0] : el);
+        
+        var dict = {};
+            dict["top"   ] = Sticky.parseToPixel(style["scroll-padding-top"   ] || 0, el);
+            dict["left"  ] = Sticky.parseToPixel(style["scroll-padding-left"  ] || 0, el);
+            dict["right" ] = Sticky.parseToPixel(style["scroll-padding-right" ] || 0, el);
+            dict["bottom"] = Sticky.parseToPixel(style["scroll-padding-bottom"] || 0, el);
+        
+        if(isNaN(dict["top"   ])) dict["top"]    = 0;
+        if(isNaN(dict["left"  ])) dict["left"]   = 0;
+        if(isNaN(dict["right" ])) dict["right"]  = 0;
+        if(isNaN(dict["bottom"])) dict["bottom"] = 0;
+        
+        return dict;
     }
 
     var debug = false;
@@ -420,20 +457,6 @@ $.fn.serializeObject = function () {
         return /*$(window).width() != $(document).width() &&*/ Math.ceil(window.scrollX + vw) >= $(document).width() && deltaX > 0;
     }
 
-    Sticky.getScrollPadding = function(el = undefined) {
-
-        var style  = window.getComputedStyle(el == undefined ? $("html")[0] : el);
-
-        var dict = {};
-            dict["top" ] = parseInt(style["scroll-padding-top" ]);
-            dict["left"] = parseInt(style["scroll-padding-left"]);
-        
-        if(isNaN(dict["top" ])) dict["top"] = 0;
-        if(isNaN(dict["left"])) dict["left"] = 0;
-
-        return dict;
-    }
-
     var anchorY = 0;
     var currentHash = window.location.hash;
 
@@ -604,7 +627,9 @@ $.fn.serializeObject = function () {
     {
         return $(".sticky-magnet")
             .sort(function (m1, m2) {
+
                 return m1.offsetTop > m2.offsetTop ? 1 : (m1.offsetTop < m2.offsetTop ?  -1 : 0);
+
             }).map(function() { 
 
                 var scrollTop     = window.scrollY + Sticky.getScrollPadding().top;
@@ -615,9 +640,9 @@ $.fn.serializeObject = function () {
                 var visibleTop    = offsetTop    < scrollTop    ? scrollTop    : offsetTop;
                 var visibleBottom = offsetBottom > scrollBottom ? scrollBottom : offsetBottom;
         
-                var scrollLeft     = window.scrollX + Sticky.getScrollPadding().left;
-                var scrollRight  = window.scrollX + Sticky.getScrollPadding().left + window.innerWidth
-                var offsetLeft     = this.offsetLeft;
+                var scrollLeft    = window.scrollX + Sticky.getScrollPadding().left;
+                var scrollRight   = window.scrollX + Sticky.getScrollPadding().left + window.innerWidth
+                var offsetLeft    = this.offsetLeft;
                 
                 var offsetRight = this.offsetLeft + this.offsetWidth;
                 var visibleLeft    = offsetLeft    < scrollLeft    ? scrollLeft    : offsetLeft;
@@ -662,7 +687,7 @@ $.fn.serializeObject = function () {
 
                 if(this === $(Settings.identifier)) return false;
                 
-                return this.offsetTop - Sticky.getScrollPadding().top - window.scrollY - 1 <= 0;
+                return this.offsetTop - Sticky.getScrollPadding(this).top - window.scrollY - 1 <= 0;
 
             }).sort(function (el1, el2) {
 
@@ -750,7 +775,10 @@ $.fn.serializeObject = function () {
                     var that = $(this).clone().removeAttr("id")
                                       .attr("aria-scrollcatch-clone", true);
     
-                    $(this).attr("aria-scrollcatch-pos", window.scrollY+1).attr("aria-labelledby", $(that).uniqueId().attr("id"));
+                    $(this).addClass("caught")
+                           .attr("aria-scrollcatch-pos", window.scrollY+1)
+                           .attr("aria-labelledby", $(that).uniqueId().attr("id"));
+
                     $(that).insertBefore($(this).css("position", "fixed").css("z-index", scrollcatch));
                 }
 
@@ -759,7 +787,7 @@ $.fn.serializeObject = function () {
                 var that = $("#"+$(this).attr("aria-labelledby"));
                   $(that).remove();
 
-                $(this).css("position", "").css("z-index" , "")
+                $(this).removeClass("caught").css("position", "").css("z-index" , "")
                        .removeAttr("aria-scrollcatch-pos");
             }
         });
@@ -786,7 +814,7 @@ $.fn.serializeObject = function () {
                 } else { // Smooth transition
 
                     $(this).css("bottom", Math.min(0, -e.scrollY.bottom));
-                    $(this).css("position", Sticky.get("scrollcatch"))
+                    $(this).css("position", Sticky.get("scrollcatch"));
                     if(e.scrollY.bottom > 0) $(this).addClass("skip-transition");
                 }
 
@@ -811,9 +839,9 @@ $.fn.serializeObject = function () {
 
             //
             // Compute offsets
-            var extraOffsetTop = parseInt(this.dataset.stickyOffsetTop) || 0;
-            var extraOffsetBottom = parseInt(this.dataset.stickyOffsetBottom) || 0
-
+            var extraOffsetTop = Math.max(Sticky.parseToPixel(this.dataset.stickyOffsetTop, this), Sticky.getScrollPadding(this).top) || 0;
+            var extraOffsetBottom = Math.max(Sticky.parseToPixel(this.dataset.stickyOffsetBottom, this), Sticky.getScrollPadding(this).bottom) || 0
+            
             var firstChild = this.firstElementChild;
             var offsetTop  = Math.max(parseInt($(this).css("margin-top")), parseInt($(firstChild).css("margin-top")));
                 offsetTop += extraOffsetTop;
@@ -984,7 +1012,7 @@ $.fn.serializeObject = function () {
         $(el === window ? "html" : el).find('a[href^="#"]').on('click', function () {
 
             var anchorElem = $(this.getAttribute("href"));
-                anchorY = anchorElem.length ? anchorElem[0].offsetTop - Sticky.getScrollPadding().top : 0;
+                anchorY = anchorElem.length ? anchorElem[0].offsetTop - Sticky.getScrollPadding(anchorElem).top : 0;
         });
 
         // Sticky magnet control

@@ -144,7 +144,7 @@ $.fn.serializeObject = function () {
         //
         // Time control
         "throttle": "250ms"  ,
-        "threshold": "2500ms",
+        "threshold": "4000ms",
 
         "scrollcatch" : false,
         "scrollhide": true,

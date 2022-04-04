@@ -559,7 +559,7 @@ $.fn.serializeObject = function () {
         return closest;
     }
 
-    Sticky.userScroll = function(el = undefined) { return $(el === undefined ? document.documentElement : el).prop("userscroll"); }
+    Sticky.userScroll = function(el = undefined) { return $(el === undefined ? document.documentElement : el).closestScrollable().prop("userscroll"); }
     Sticky.scrollTo = function(dict, callback = function() {}, el = window)
     {
         var origin = el;
@@ -700,6 +700,7 @@ $.fn.serializeObject = function () {
         var unroll = st < lastScrollTop;
         lastScrollTop = st <= 0 ? 0 : st;
 
+        // console.log(currMagnet, lastScrollTop, roll, unroll,  st, lastScrollTop);
         var magnet = currMagnet;
         var closestMagnets = magnets.filter(function() { return this.visible > scrollSnapProximity; });
         
@@ -734,27 +735,25 @@ $.fn.serializeObject = function () {
             }).map(function() { 
 
                 var scroller = $(this).closestScrollable()[0];
-                
                 var scrollTop     = $(scroller).scrollTop() + Sticky.getScrollPadding(scroller).top;
                 var scrollBottom  = $(scroller).scrollTop() + Sticky.getScrollPadding(scroller).top + scroller.clientHeight;
-                var offsetTop     = scroller.offsetTop;
-                var offsetBottom  = scroller.offsetTop + scroller.offsetHeight;
+                var scrollLeft    = $(scroller).scrollLeft() + Sticky.getScrollPadding(scroller).left;
+                var scrollRight   = $(scroller).scrollLeft() + Sticky.getScrollPadding(scroller).left + scroller.clientWidth;
+
+                var offsetTop     = this.offsetTop;
+                var offsetBottom  = this.offsetTop + this.clientHeight;
+                var offsetLeft    = this.offsetLeft;
+                var offsetRight   = this.offsetLeft + this.clientWidth;
 
                 var visibleTop    = offsetTop    < scrollTop    ? scrollTop    : offsetTop;
                 var visibleBottom = offsetBottom > scrollBottom ? scrollBottom : offsetBottom;
-        
-                var scrollLeft    = $(scroller).scrollLeft() + Sticky.getScrollPadding(scroller).left;
-                var scrollRight   = $(scroller).scrollLeft() + Sticky.getScrollPadding(scroller).left + scroller.clientWidth;
-                var offsetLeft    = scroller.offsetLeft;
-                
-                var offsetRight  = scroller.offsetLeft + scroller.offsetWidth;
-                var visibleLeft  = offsetLeft    < scrollLeft    ? scrollLeft    : offsetLeft;
-                var visibleRight = offsetRight > scrollRight ? scrollRight : offsetRight;
-                var visibleX = (visibleBottom - visibleTop) / scroller.offsetHeight;
-                var visibleY = (visibleRight - visibleLeft) / scroller.offsetWidth;
-                
-                var visible = Math.min(1, Math.max(0, visibleX))*Math.min(1, Math.max(0, visibleY));
-                
+                var visibleLeft   = offsetLeft    < scrollLeft   ? scrollLeft    : offsetLeft;
+                var visibleRight  = offsetRight > scrollRight    ? scrollRight : offsetRight;
+
+                var visibleX = Math.min(1, Math.max(0, (visibleRight - visibleLeft) / scroller.clientWidth ));
+                var visibleY = Math.min(1, Math.max(0, (visibleBottom - visibleTop) / scroller.clientHeight));
+                var visible  = visibleX * visibleY;
+
                 return {element: this, offsetTop: this.offsetTop, offsetLeft: this.offsetLeft, visible:visible };
             });
     }

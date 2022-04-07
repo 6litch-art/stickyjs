@@ -1,11 +1,4 @@
-/**
- * TODO: 
- * - Implement 2D grid
- * - Implement goto when click on the element
- * - Implement start/center/end
- */
-
- (function(namespace) {
+(function(namespace) {
     
     namespace.replaceHash = function(newHash, triggerHashChange = true, skipIfNoIdentifier = true) {
 
@@ -764,18 +757,19 @@ $.fn.serializeObject = function () {
                     var scrollDebounce = setTimeout(function() {
 
                         scrollSnapDebounce = false;
-                        $(scroller).removeClass("sticky-prevent-scroll");
 
+                        $(scroller).removeClass("sticky-prevent-scroll");
                         $(scroller).off('scrolldelta.sticky.snap');
+
                         clearTimeout(scrollDebounce);
                         clearInterval(scrollLock);
-
 
                     }, 1000*Sticky.parseDuration(Sticky.get("scrollsnap_debounce")));
 
                     $(scroller).one('scrolldelta.sticky.snap', Sticky.debounce(function () {
 
                         scrollSnapDebounce = false;
+
                         $(scroller).removeClass("sticky-prevent-scroll");
 
                         clearTimeout(scrollDebounce);

@@ -138,7 +138,7 @@ $.fn.serializeObject = function () {
         // Time control
         "tick"  : "1ms"  ,
         "throttle": "250ms"  ,
-        "debounce": "500ms"  ,
+        "debounce": "1000ms"  ,
         "threshold": "4000ms",
 
         "scrollcatch": false,
@@ -764,18 +764,7 @@ $.fn.serializeObject = function () {
                         clearTimeout(scrollDebounce);
                         clearInterval(scrollLock);
 
-                    }, 1000*Sticky.parseDuration(Sticky.get("scrollsnap_debounce")));
-
-                    $(scroller).one('scrolldelta.sticky.snap', Sticky.debounce(function () {
-
-                        scrollSnapDebounce = false;
-
-                        $(scroller).removeClass("sticky-prevent-scroll");
-
-                        clearTimeout(scrollDebounce);
-                        clearInterval(scrollLock);
-
-                    }, 1000*Sticky.parseDuration(Sticky.get("debounce"))));
+                    }, 1000*Sticky.parseDuration(Sticky.get("debounce")));
                 }
 
             }, scroller);

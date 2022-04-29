@@ -905,31 +905,34 @@ $.fn.serializeObject = function () {
             var scroller = $(this).closestScrollable()[0];
             var scrollcatchPos = $(this).attr("aria-scrollcatch-pos");
             var scrollcatchClone = $(this).attr("aria-scrollcatch-clone");
-                    
-            if(style["position"] !== "fixed" && !scrollcatchClone) {
-              
-                var scrollcatch = $(this).attr("aria-scrollcatch") || Sticky.get("scrollcatch");
-                    scrollcatch = scrollcatch === true ? style["z-index"] : scrollcatch;
 
-                    if (scrollcatch !== false && this.offsetTop <= scroller.scrollTop) {
+            if(!e.scrollT.elastic) { // Avoid flickering
 
-                    var that = $(this).clone().removeAttr("id")
-                                      .attr("aria-scrollcatch-clone", true);
-    
-                    $(this).addClass("caught")
-                           .attr("aria-scrollcatch-pos", scroller.scrollTop+1)
-                           .attr("aria-labelledby", $(that).uniqueId().attr("id"));
+                if(style["position"] !== "fixed" && !scrollcatchClone) {
+                
+                    var scrollcatch = $(this).attr("aria-scrollcatch") || Sticky.get("scrollcatch");
+                        scrollcatch = scrollcatch === true ? style["z-index"] : scrollcatch;
 
-                    $(that).insertBefore($(this).css("position", "fixed").css("z-index", scrollcatch));
+                        if (scrollcatch !== false && this.offsetTop <= scroller.scrollTop) {
+
+                        var that = $(this).clone().removeAttr("id")
+                                        .attr("aria-scrollcatch-clone", true);
+        
+                        $(this).addClass("caught")
+                            .attr("aria-scrollcatch-pos", scroller.scrollTop+1)
+                            .attr("aria-labelledby", $(that).uniqueId().attr("id"));
+
+                        $(that).insertBefore($(this).css("position", "fixed").css("z-index", scrollcatch));
+                    }
+
+                } else if(scrollcatchPos > scroller.scrollTop) {
+
+                    var that = $("#"+$(this).attr("aria-labelledby"));
+                    $(that).remove();
+
+                    $(this).removeClass("caught").css("position", "").css("z-index" , "")
+                        .removeAttr("aria-scrollcatch-pos");
                 }
-
-            } else if(scrollcatchPos > scroller.scrollTop) {
-
-                var that = $("#"+$(this).attr("aria-labelledby"));
-                  $(that).remove();
-
-                $(this).removeClass("caught").css("position", "").css("z-index" , "")
-                       .removeAttr("aria-scrollcatch-pos");
             }
         });
 

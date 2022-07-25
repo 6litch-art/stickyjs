@@ -1,8 +1,5 @@
 /* Force to disable scroll-behavior: JQuery is handling this part (better control and stability) */
-html 
-{ 
-    scroll-behavior: unset !important;
-}
+html { scroll-behavior: unset !important; }
 
 * { -ms-overflow-style: none; scrollbar-width: none; }
 *::-webkit-scrollbar { display: none; }

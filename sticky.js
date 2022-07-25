@@ -9,11 +9,17 @@
         var oldURL = location.origin+location.pathname+location.hash;
         var newURL = location.origin+location.pathname+newHash;
 
-        if(skipIfNoIdentifier && $(newHash).length === 0){
+        var fallback  = $(newHash).length === 0;
+
+        var hashElement = $(newHash)[0] ?? undefined;
+        if (hashElement !== undefined) // Update hash only if element is displayed
+            fallback |= window.getComputedStyle(hashElement)["display"] == "none";
+
+        if(skipIfNoIdentifier && fallback){
 
             dispatchEvent(new HashChangeEvent("hashfallback", {oldURL:oldURL, newURL:newURL}));
             newHash = "";
-        
+
             oldURL = location.origin+location.pathname+location.hash;
             newURL = location.origin+location.pathname+newHash;
         }
@@ -22,7 +28,7 @@
 
         var state = Object.assign({}, history.state, {href: newURL});
         history.replaceState(state, '', newURL);
-        
+
         if(triggerHashChange)
             dispatchEvent(new HashChangeEvent("hashchange", {oldURL:oldURL, newURL:newURL}));
 
@@ -173,9 +179,11 @@ $.fn.serializeObject = function () {
         //     else it enters into the element (equiv. negative margin..)
         "easein"      : "100px",
         "easeout"     : "50px" ,
-        "easetime"    : "500ms",
-        "easedelay"   : "0.5s" ,
-        "easethrottle": "100ms"
+        "easetime"    : "250ms",
+        "easedelay"   : "250ms" ,
+        "easethrottle": "0ms",
+
+        "debug"       : false
     };
 
     Sticky.parseDuration = function(str) { 
@@ -219,16 +227,15 @@ $.fn.serializeObject = function () {
             dict["left"  ] = Sticky.parseToPixel(style["scroll-padding-left"  ] || 0, scroller);
             dict["right" ] = Sticky.parseToPixel(style["scroll-padding-right" ] || 0, scroller);
             dict["bottom"] = Sticky.parseToPixel(style["scroll-padding-bottom"] || 0, scroller);
-        
+
         if(isNaN(dict["top"   ])) dict["top"]    = 0;
         if(isNaN(dict["left"  ])) dict["left"]   = 0;
         if(isNaN(dict["right" ])) dict["right"]  = 0;
         if(isNaN(dict["bottom"])) dict["bottom"] = 0;
-        
+
         return dict;
     }
 
-    var debug = false;
     var ready = false;
 
     Sticky.epsilon = function(x1, x0) { return Math.abs(x1-x0) < 1; }
@@ -236,7 +243,7 @@ $.fn.serializeObject = function () {
 
         var targetData = jQuery.data(el || document.documentElement);
         Object.keys(targetData).forEach((key) => delete targetData[key]);
-        
+
         return this;
     }
 
@@ -264,13 +271,13 @@ $.fn.serializeObject = function () {
     Sticky.ready = function (options = {}) {
 
         if("debug" in options)
-            debug = options["debug"];
+            Settings.debug = options["debug"];
 
         Sticky.configure(options);
         ready = true;
 
-        if (debug) console.log("Sticky is ready.");
-        if (debug) console.log("(padding = ", Sticky.getScrollPadding(), ")");
+        if (Settings.debug) console.log("Sticky is ready.");
+        if (Settings.debug) console.log("(padding = ", Sticky.getScrollPadding(), ")");
         dispatchEvent(new Event('sticky:ready'));
 
         return this;
@@ -323,7 +330,7 @@ $.fn.serializeObject = function () {
             if (value !== undefined && options.hasOwnProperty(key)) Settings[key] = value;
         }
 
-        if (debug) console.log("Sticky configuration: ", Settings);
+        if (Settings.debug) console.log("Sticky configuration: ", Settings);
 
         return this;
     }
@@ -351,8 +358,8 @@ $.fn.serializeObject = function () {
         // Screen & viewport positioning
         targetData.first   = first;
         targetData.elastic = targetData.elastic || false;
-        targetData.vw      = $(document.documentElement).innerWidth;
-        targetData.vh      = $(document.documentElement).innerHeight;
+        targetData.vw      = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+        targetData.vh      = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
         targetData.sw      = event.target[0].scrollWidth  || 0;
         targetData.sh      = event.target[0].scrollHeight || 0;
         targetData.width   = event.target[0].clientWidth  || 0;
@@ -696,7 +703,7 @@ $.fn.serializeObject = function () {
     var scrollSnapDebounce = false;
     Sticky.onScrollSnap = function (e)
     {
-        if(debug) console.log(show,"Sticky magnetic:", scrollSnap, scrollSnapStart, scrollSnapProximity);
+        if(Settings.debug) console.log(show,"Sticky magnetic:", scrollSnap, scrollSnapStart, scrollSnapProximity);
 
         var scrollSnap = Sticky.get("scrollsnap");
         if(!scrollSnap) return;
@@ -814,12 +821,12 @@ $.fn.serializeObject = function () {
     var hasReset = false;
     Sticky.onScrollDelta = function (e) {
 
-        if (debug) console.log("Sticky delta scrolling.. ", e.scrollY, e.scrollX, e.scrollT, e.screen);
+        if (Settings.debug) console.log("Sticky delta scrolling.. ", e.scrollY, e.scrollX, e.scrollT, e.screen);
         
         $(e.target).find(".sticky-headlines").each(function() {
 
             var hash = null;
-            if(debug) console.log(show,"Sticky headlines:", $(this.querySelectorAll('*[id]')));
+            if(Settings.debug) console.log(show,"Sticky headlines:", $(this.querySelectorAll('*[id]')));
 
             var el = $(this.querySelectorAll('*[id]')).filter(function() {
 
@@ -906,10 +913,10 @@ $.fn.serializeObject = function () {
             var scrollcatchPos = $(this).attr("aria-scrollcatch-pos");
             var scrollcatchClone = $(this).attr("aria-scrollcatch-clone");
 
-            if(!e.scrollT.elastic) { // Avoid flickering
+            if(!e.scrollT.elastic) {
 
                 if(style["position"] !== "fixed" && !scrollcatchClone) {
-                
+
                     var scrollcatch = $(this).attr("aria-scrollcatch") || Sticky.get("scrollcatch");
                         scrollcatch = scrollcatch === true ? style["z-index"] : scrollcatch;
 
@@ -917,7 +924,7 @@ $.fn.serializeObject = function () {
 
                         var that = $(this).clone().removeAttr("id")
                                         .attr("aria-scrollcatch-clone", true);
-        
+
                         $(this).addClass("caught")
                             .attr("aria-scrollcatch-pos", scroller.scrollTop+1)
                             .attr("aria-labelledby", $(that).uniqueId().attr("id"));
@@ -1003,7 +1010,7 @@ $.fn.serializeObject = function () {
             // Compute offsets
             var extraOffsetTop = Math.max(Sticky.parseToPixel(this.dataset.stickyOffsetTop, this), Sticky.getScrollPadding().top) || 0;
             var extraOffsetBottom = Math.max(Sticky.parseToPixel(this.dataset.stickyOffsetBottom, this), Sticky.getScrollPadding().bottom) || 0
-            
+
             var firstChild = this.firstElementChild;
             var offsetTop  = Math.max(parseInt($(this).css("margin-top")), parseInt($(firstChild).css("margin-top")));
                 offsetTop += extraOffsetTop;
@@ -1029,13 +1036,13 @@ $.fn.serializeObject = function () {
             // Update transition CSS
             var extraEaseTime  = Sticky.parseDuration(this.dataset.stickyEasetime)  || Sticky.parseDuration(Sticky.get("easetime"))  || -1;
             var extraEaseDelay = Sticky.parseDuration(this.dataset.stickyEasedelay) || Sticky.parseDuration(Sticky.get("easedelay")) || -1;
-            
+
             if(e.first) {
 
                 var transitionProperty = $(this).css("transitionProperty").split(",");
                 var transitionDuration = $(this).css("transitionDuration").split(",");
                 var transitionDelay    = $(this).css("transitionDelay").split(",");
-                
+
                 var opacityIndex = transitionProperty.indexOf("opacity");
                 if (opacityIndex < 0) opacityIndex = transitionProperty.indexOf("all");
 
@@ -1061,7 +1068,7 @@ $.fn.serializeObject = function () {
             if (extraEaseIn === undefined) extraEaseIn = this.dataset.stickyEaseinout;
             if (extraEaseIn === undefined && $(this).hasClass("sticky-easein")) 
                 extraEaseIn = Sticky.get("easein");
-           
+
             if(extraEaseIn !== undefined) {
                 // ease-in should not be bigger than the size of the element
                 extraEaseIn  = parseInt(extraEaseIn);
@@ -1078,7 +1085,7 @@ $.fn.serializeObject = function () {
                 // ease-out should not be bigger than the size of the element
                 extraEaseOut = parseInt(extraEaseOut);
                 if(extraEaseOut < 0) extraEaseOut = Math.max(extraEaseOut, -this.clientHeight);
-                
+
                 // ease-in-out should not overlap
                 if(Math.sign(extraEaseIn) == Math.sign(extraEaseIn)) {
                     if(extraEaseIn < 0) extraEaseOut = Math.min(extraEaseOut, extraEaseIn);
@@ -1087,10 +1094,11 @@ $.fn.serializeObject = function () {
             }
 
             // Y = 0 : viewport top = element bottom
-            var top    = this.offsetTop                   - (e.scrollY.top+e.screen.vh); 
+            var top    = this.offsetTop                   - (e.scrollY.top+e.screen.vh);
+
             // Y = 0 : viewport bottom = element top 
             var bottom = this.offsetTop+this.clientHeight - (e.scrollY.top);
-            
+
             var isBiggerThanViewport = (e.screen.vh < this.clienHeight);
             var show    = $(this).hasClass("show");
             var easeIn  = $(this).hasClass("sticky-easein")  && extraEaseIn !== undefined && !show;
@@ -1098,7 +1106,7 @@ $.fn.serializeObject = function () {
 
             if (easeIn) {
 
-                var isAbove   = top    - extraEaseIn > 0;
+                    var isAbove   = top    - extraEaseIn > 0;
                 var isBelow   = bottom + extraEaseIn < 0;
                 var isBetween = isBiggerThanViewport
                     ? !isAbove && (top    + this.clientHeight + extraEaseIn > 0) &&
@@ -1106,7 +1114,7 @@ $.fn.serializeObject = function () {
                     : !isAbove && (top    + this.clientHeight + extraEaseIn < 0) &&
                       !isBelow && (bottom - this.clientHeight - extraEaseIn > 0);
 
-                if(debug) console.log(show,"Sticky ease-in:",isAbove,isBelow,isBetween);
+                if(Settings.debug) console.log(show,"Sticky ease-in:",isAbove,isBelow,isBetween);
                 show = (!isAbove && !isBelow);
             
             } else if(e.first) show = true;
@@ -1121,9 +1129,10 @@ $.fn.serializeObject = function () {
                     : !isAbove && (top    + this.clientHeight + extraEaseOut < 0) &&
                       !isBelow && (bottom - this.clientHeight - extraEaseOut > 0);
 
-                if(debug) console.log(show,"Sticky ease-out:",isAbove,isBelow,isBetween);
+                if(Settings.debug) console.log(show,"Sticky ease-out:",isAbove,isBelow,isBetween);
                 show = !isAbove && !isBelow;
-              }
+
+            }
 
             if(show) $(this).addClass("show");
             else $(this).removeClass("show");

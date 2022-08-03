@@ -1,9 +1,9 @@
 (function(namespace) {
-    
+
     namespace.replaceHash = function(newHash, triggerHashChange = true, skipIfNoIdentifier = true) {
 
         if(!newHash) newHash = "";
-        if (newHash !== "" && (''+newHash).charAt(0) !== '#') 
+        if (newHash !== "" && (''+newHash).charAt(0) !== '#')
             newHash = '#' + newHash;
 
         var oldURL = location.origin+location.pathname+location.hash;
@@ -38,10 +38,10 @@
 })(window);
 
 $.fn.isScrollable  = function() { return $(this).isScrollableX() || $(this).isScrollableY(); }
-$.fn.isScrollableX = function() { 
-    
-    return $(this).map(function(i) { 
-    
+$.fn.isScrollableX = function() {
+
+    return $(this).map(function(i) {
+
         var el = this[i] === window ? document.documentElement : this[i];
         var hasScrollableContent = el.scrollWidth > el.clientWidth;
 
@@ -52,10 +52,10 @@ $.fn.isScrollableX = function() {
 
     }.bind(this));
 }
-$.fn.isScrollableY = function() { 
-    
-    return $(this).map(function(i) { 
-    
+$.fn.isScrollableY = function() {
+
+    return $(this).map(function(i) {
+
         var el = this[i] === window ? document.documentElement : this[i];
         var hasScrollableContent = el.scrollHeight > el.clientHeight;
 
@@ -82,7 +82,7 @@ $.fn.closestScrollable = function()
 
             target = target.parentElement;
         }
-       
+
         return $(target).isScrollable() ? target : undefined;
     });
 }
@@ -151,7 +151,7 @@ $.fn.serializeObject = function () {
         "scrolllock" : true,
         "scrollhide" : true,
         "scrollhint" : 0.5,
-        
+
         //
         // Manual overscroll detection (browser compatibility, e.g. scroll event missing with Firefox)
         "overscroll": {
@@ -183,16 +183,18 @@ $.fn.serializeObject = function () {
         "easedelay"   : "250ms" ,
         "easethrottle": "0ms",
 
-        "debug"       : false
+        "debug"       : false,
+        "disable"     : false,
+        "replacehash" : true
     };
 
-    Sticky.parseDuration = function(str) { 
+    Sticky.parseDuration = function(str) {
 
         var array = String(str).split(", ");
             array = array.map(function(t) {
 
                 if(String(t).endsWith("ms")) return parseFloat(String(t))/1000;
-                return parseFloat(String(t));    
+                return parseFloat(String(t));
             });
 
         return Math.max(...array);
@@ -201,7 +203,7 @@ $.fn.serializeObject = function () {
     Sticky.remToPixel     = function(rem)     { return parseFloat(rem) * parseFloat(getComputedStyle(document.documentElement).fontSize); }
     Sticky.emToPixel      = function(em, el)  { return parseFloat(em ) * parseFloat(getComputedStyle(el.parentElement).fontSize); }
     Sticky.percentToPixel = function(p , el)  { return parseFloat(p  ) * el.outerWidth(); }
-    Sticky.parseToPixel   = function(str, el) { 
+    Sticky.parseToPixel   = function(str, el) {
 
         if(str === undefined) return undefined;
 
@@ -250,7 +252,6 @@ $.fn.serializeObject = function () {
     Sticky.debounce = function(func, wait, immediate) {
 
         var timeout;
-
         return function() {
 
             var context = this, args = arguments;
@@ -284,21 +285,21 @@ $.fn.serializeObject = function () {
     };
 
     Sticky.get = function(key) {
-    
-        if(key in Sticky.settings) 
+
+        if(key in Sticky.settings)
             return Sticky.settings[key];
 
         return null;
     };
 
     Sticky.set = function(key, value) {
-    
+
         Sticky.settings[key] = value;
         return this;
     };
 
     Sticky.add = function(key, value) {
-    
+
         if(! (key in Sticky.settings))
             Sticky.settings[key] = [];
 
@@ -312,7 +313,7 @@ $.fn.serializeObject = function () {
 
         if(key in Sticky.settings) {
 
-            Sticky.settings[key] = Sticky.settings[key].filter(function(setting, index, arr){ 
+            Sticky.settings[key] = Sticky.settings[key].filter(function(setting, index, arr){
                 return value != setting;
             });
 
@@ -337,16 +338,16 @@ $.fn.serializeObject = function () {
 
     Sticky.compute = function(event) {
 
-        if (event.target === window  ) 
+        if (event.target === window  )
             event.target = document.documentElement;
-        if (event.target === document) 
+        if (event.target === document)
             event.target = document.documentElement;
 
         event.target = $(event.target).closestScrollable();
-        
+
         if ($(event.target).prop("user-scroll") === undefined)
             $(event.target).prop("user-scroll", true);
-        
+
         var targetData = jQuery.data(event.target[0]);
         var first  = (Object.keys(targetData).length === 0);
 
@@ -378,7 +379,7 @@ $.fn.serializeObject = function () {
             left   = targetData.left;
             right  = targetData.right;
         }
-       
+
         targetData.topCounter = targetData.topCounter || 0;
         if (targetData.top    == 0 && targetData.top < top)
             targetData.topCounter    = (targetData.top    == 0 && top    > 0 ? targetData.topCounter    + 1 : targetData.topCounter   ) || 0;
@@ -420,7 +421,7 @@ $.fn.serializeObject = function () {
         }
 
         targetData.elastic = targetData.topElastic || targetData.bottomElastic || targetData.leftElastic || targetData.rightElastic;
-        
+
         // Timing information
         if (targetData.time0 === undefined || !targetData.elastic || targetData.first) {
             targetData.time0 = {};
@@ -446,7 +447,7 @@ $.fn.serializeObject = function () {
             targetData.time0.right  = null;
             targetData.time .right  = null;
         }
-        
+
         if(targetData.topElastic   ) targetData.time0.top    = targetData.time0.top    || new Date().getTime();
         if(targetData.bottomElastic) targetData.time0.bottom = targetData.time0.bottom || new Date().getTime();
         if(targetData.leftElastic  ) targetData.time0.left   = targetData.time0.left   || new Date().getTime();
@@ -517,23 +518,23 @@ $.fn.serializeObject = function () {
 
     Sticky.overscrollTop    = function(event, el = window) {
         el = el === window ? document.documentElement : el;
-        
+
         var deltaY = (event.deltaY !== undefined ? event.deltaY : event.originalEvent.deltaY);
         return $(el).scrollTop() === 0 && deltaY < 0;
-    }  
+    }
     Sticky.overscrollBottom = function(event, el = window) {
         el = el === window ? document.documentElement : el;
 
         var deltaY = (event.deltaY !== undefined ? event.deltaY : event.originalEvent.deltaY);
         return $(el).scrollTop() >= $(el)[0].scrollHeight - $(el)[0].clientHeight && deltaY > 0;
     }
-    Sticky.overscrollLeft   = function(event, el = window) { 
+    Sticky.overscrollLeft   = function(event, el = window) {
         el = el === window ? document.documentElement : el;
 
-        var deltaX = (event.deltaX !== undefined ? event.deltaX : event.originalEvent.deltaX);       
+        var deltaX = (event.deltaX !== undefined ? event.deltaX : event.originalEvent.deltaX);
         return $(el).scrollLeft() === 0 && deltaX < 0;
     }
-    Sticky.overscrollRight  = function(event, el = window) { 
+    Sticky.overscrollRight  = function(event, el = window) {
         el = el === window ? document.documentElement : el;
 
         var deltaX = (event.deltaX !== undefined ? event.deltaX : event.originalEvent.deltaX);
@@ -543,37 +544,35 @@ $.fn.serializeObject = function () {
     var anchorY = 0;
     var currentHash = window.location.hash;
 
-    Sticky.closestToZero = function(numbers)
+    Sticky.closestToZero = function(numbers) { return Sticky.closestTo(0, numbers); }
+    Sticky.closestTo = function(x, numbers)
     {
         if (numbers.length === 0) return undefined;
-        
-        let closest = 0;
-        for(let i = 0; i < numbers.length;i++) {
 
-            let number = numbers[i];
-            let absNumber =  Math.abs(number);
-            let absClosest = Math.abs(numbers[closest]);
-    
-            if (absNumber < absClosest) closest = i;
-            else if (absNumber === absClosest && numbers[closest] < 0) closest = i;
+        var min, closest = 0;
+        for(let i = 0; i < numbers.length; i++) {
+
+            min = Math.abs(numbers[closest] - x);
+            if (Math.abs(numbers[i] - x) < min)
+                closest = i;
         }
 
-        return closest;
+        return parseInt(closest);
     }
 
     Sticky.userScroll = function(el = undefined) { return $(el === undefined ? document.documentElement : el).closestScrollable().prop("user-scroll"); }
     Sticky.scrollTo = function(dict, callback = function() {}, el = window)
     {
         var origin = el;
-        if (el === window  ) 
+        if (el === window  )
             el = document.documentElement;
-        if (el === document) 
+        if (el === document)
             el = document.documentElement;
 
         var cancelable = dict["cancelable"] ?? false;
-        
+
         if(!Sticky.userScroll(el)) {
-            
+
             if($(el).prop("cancelable")) $(el).stop();
             return;
         }
@@ -628,11 +627,12 @@ $.fn.serializeObject = function () {
         return this;
     }
 
-    Sticky.scrollToFirstSnap = function (el = window, callback = function() {}) 
-    { 
+    Sticky.scrollToFirstSnap = function (el = window, callback = function() {})
+    {
         var scroller = $(el).closestScrollable()[0];
-        var snap = Sticky.getFirstSnap(el);
-        if (snap !== undefined) Sticky.scrollTo({top:snap.offsetTop, left:snap.offsetLeft, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll_duration"], speed: Settings["smoothscroll_speed"]}, callback, scroller); 
+        var snap = Sticky.getFirstSnap(scroller);
+        if (snap !== undefined) Sticky.scrollTo({top:snap.offsetTop, left:snap.offsetLeft, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll_duration"], speed: Settings["smoothscroll_speed"]}, callback, scroller);
+        else Sticky.scrollTo({top:0, left:0, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll_duration"], speed: Settings["smoothscroll_speed"]}, callback, scroller);
     }
 
     Sticky.getFirstSnap = function (el = window)
@@ -643,10 +643,11 @@ $.fn.serializeObject = function () {
         return magnets[0];
     }
 
-    Sticky.scrollToLastSnap = function (el = window, callback = function() {}) { 
+    Sticky.scrollToLastSnap = function (el = window, callback = function() {}) {
         var scroller = $(el).closestScrollable()[0];
-        var snap = Sticky.getLastSnap(el);
-        if (snap !== undefined) Sticky.scrollTo({top:snap.offsetTop, left:snap.offsetLeft, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll_duration"], speed: Settings["smoothscroll_speed"]}, callback, scroller); 
+        var snap = Sticky.getLastSnap(scroller);
+        if (snap !== undefined) Sticky.scrollTo({top:snap.offsetTop, left:snap.offsetLeft, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll_duration"], speed: Settings["smoothscroll_speed"]}, callback, scroller);
+        else Sticky.scrollTo({top:scroller.scrollHeight || document.documentElement.scrollHeight, left:scroller.scrollWidth || document.documentElement.scrollWidth, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll_duration"], speed: Settings["smoothscroll_speed"]}, callback, scroller);
     }
 
     Sticky.getLastSnap = function (el = window)
@@ -657,22 +658,23 @@ $.fn.serializeObject = function () {
         return magnets[magnets.length-1];
     }
 
-    Sticky.scrollToSnap = function (el = window, callback = function() {}) { 
+    Sticky.scrollToSnap = function (el = window, callback = function() {}) {
         var scroller = $(el).closestScrollable()[0];
         var snap = Sticky.getSnap(el);
         if (snap !== undefined) Sticky.scrollTo({top:snap.offsetTop, left:snap.offsetLeft, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll_duration"], speed: Settings["smoothscroll_speed"]}, callback, scroller);
     }
+
     Sticky.getSnap = function (el = window)
     {
         var magnets = Sticky.getMagnets(el);
         if(!magnets.length) return undefined;
 
-        return magnets[Sticky.closestToZero(magnets.map(function() { return this.offsetTop; }))];
+        return magnets[Sticky.closestTo(el.scrollTop || el.scrollY, magnets.map(function() { return this.offsetTop; }))];
     }
 
     Sticky.scrollToPreviousSnap = function (el = window, callback = function() {}) {
         var scroller = $(el).closestScrollable()[0];
-        var snap = Sticky.getPreviousSnap(el);
+        var snap = Sticky.getPreviousSnap(scroller);
         if (snap !== undefined) Sticky.scrollTo({top:snap.offsetTop, left:snap.offsetLeft, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll_duration"], speed: Settings["smoothscroll_speed"]}, callback, scroller);
     }
     Sticky.getPreviousSnap = function (el = window)
@@ -680,22 +682,100 @@ $.fn.serializeObject = function () {
         var magnets = Sticky.getMagnets(el);
         if(!magnets.length) return undefined;
 
-        var current = Sticky.closestToZero(magnets.map(function() { return this.offsetTop; }));
+        var current = Sticky.closestTo(el.scrollTop || el.scrollY, magnets.map(function() { return this.offsetTop; }));
         return current > 0 ? magnets[current-1] : magnets[current];
     }
 
     Sticky.scrollToNextSnap = function (el = window, callback = function() {}) {
+
         var scroller = $(el).closestScrollable()[0];
         var snap = Sticky.getNextSnap(scroller);
         if (snap !== undefined) Sticky.scrollTo({top:snap.offsetTop, left:snap.offsetLeft, easing:Settings["smoothscroll_easing"],  duration: Settings["smoothscroll_duration"], speed: Settings["smoothscroll_speed"]}, callback, scroller);
     }
+
+    Sticky.enableScroll = function(el = window) {
+
+        // left: 37, up: 38, right: 39, down: 40,
+        // spacebar: 32, pageup: 33, pagedown: 34, end: 35, home: 36
+        var keys = {37: 1, 38: 1, 39: 1, 40: 1};
+
+        function preventDefault(e) {
+        e.preventDefault();
+        }
+
+        function preventDefaultForScrollKeys(e) {
+            if (keys[e.keyCode]) {
+                preventDefault(e);
+                return false;
+            }
+        }
+
+        // modern Chrome requires { passive: false } when adding event
+        var supportsPassive = false;
+        try {
+        window.addEventListener("test", null, Object.defineProperty({}, 'passive', {
+            get: function () { supportsPassive = true; }
+        }));
+        } catch(e) {}
+
+        var wheelOpt = supportsPassive ? { passive: false } : false;
+        var wheelEvent = 'onwheel' in document.createElement('div') ? 'wheel.preventDefault' : 'mousewheel.preventDefault';
+
+        el.addEventListener('DOMMouseScroll', preventDefault, false); // older FF
+        el.addEventListener(wheelEvent, preventDefault, wheelOpt); // modern desktop
+        el.addEventListener('touchmove.preventDefault', preventDefault, wheelOpt); // mobile
+        el.addEventListener('keydown.preventDefault', preventDefaultForScrollKeys, false);
+        scrollState[el] = true;
+    }
+
+    scrollState = {};
+    Sticky.allowScrolling = function(el = window)
+    {
+        return el in scrollState ? scrollState[el] || true : true;
+    }
+
+    Sticky.disableScroll = function(el = window) {
+
+        // left: 37, up: 38, right: 39, down: 40,
+        // spacebar: 32, pageup: 33, pagedown: 34, end: 35, home: 36
+        var keys = {37: 1, 38: 1, 39: 1, 40: 1};
+
+        function preventDefault(e) {
+        e.preventDefault();
+        }
+
+        function preventDefaultForScrollKeys(e) {
+            if (keys[e.keyCode]) {
+                preventDefault(e);
+                return false;
+            }
+        }
+
+        // modern Chrome requires { passive: false } when adding event
+        var supportsPassive = false;
+        try {
+        window.addEventListener("test", null, Object.defineProperty({}, 'passive', {
+            get: function () { supportsPassive = true; }
+        }));
+        } catch(e) {}
+
+        var wheelOpt = supportsPassive ? { passive: false } : false;
+        var wheelEvent = 'onwheel' in document.createElement('div') ? 'wheel.preventDefault' : 'mousewheel.preventDefault';
+
+        el.removeEventListener('DOMMouseScroll.preventDefault', preventDefault, false);
+        el.removeEventListener(wheelEvent, preventDefault, wheelOpt);
+        el.removeEventListener('touchmove.preventDefault', preventDefault, wheelOpt);
+        el.removeEventListener('keydown.preventDefault', preventDefaultForScrollKeys, false);
+
+        scrollState[el] = false;
+    }
+
     Sticky.getNextSnap = function(el = window)
     {
         var magnets = Sticky.getMagnets(el);
-
         if(!magnets.length) return undefined;
 
-        var current = Sticky.closestToZero(magnets.map(function() { return this.offsetTop; }));
+        var current = Sticky.closestTo(el.scrollTop || el.scrollY, magnets.map(function() { return this.offsetTop; }));
         return current < magnets.length-1 ? magnets[current+1] : magnets[current];
     }
 
@@ -714,12 +794,12 @@ $.fn.serializeObject = function () {
         var magnets = Sticky.getMagnets(e.target);
         if(!magnets.length) return;
 
-        var currentId     = Sticky.closestToZero(magnets.map(function() { return this.offsetTop-window.scrollY; }));
+        var currentId  = Sticky.closestToZero(magnets.map(function() { return this.offsetTop-window.scrollY; }));
         var currMagnet = magnets[currentId];
-        var magnet = currMagnet;
-        
+        var magnet     = currMagnet;
+
         var scroller = $(e.target).closestScrollable()[0];
-        if(!e.screen.userScroll) return;
+        if(!e.screen.userScroll || !Sticky.allowScrolling()) return;
 
         var st = e.scrollY.top;
         var roll   = st > lastScrollTop;
@@ -728,53 +808,36 @@ $.fn.serializeObject = function () {
 
         var magnet = currMagnet;
         var closestMagnets = magnets.filter(function() { return this.visible > scrollSnapProximity; });
-        
-        if  (roll) closestMagnets = closestMagnets.filter(function() { return this.element.offsetTop                                  >= window.scrollY && this.element.offsetLeft                            >= window.scrollX; });
-        else if(unroll) closestMagnets = closestMagnets.filter(function() { return this.element.offsetTop + this.element.offsetHeight >= window.scrollY && this.element.offsetLeft + this.element.offsetWidth >= window.scrollX; }); 
 
-        var scrollTo = closestMagnets.length && closestMagnets[0] !== currMagnet && !scrollSnapDebounce;
+        if  (roll) closestMagnets = closestMagnets.filter(function() { return this.element.offsetTop                                  >= window.scrollY && this.element.offsetLeft                            >= window.scrollX; });
+        else if(unroll) closestMagnets = closestMagnets.filter(function() { return this.element.offsetTop + this.element.offsetHeight >= window.scrollY && this.element.offsetLeft + this.element.offsetWidth >= window.scrollX; });
+
+        var scrollTo = closestMagnets.length && (closestMagnets[0]["element"] ?? undefined) !== currMagnet["element"] && !scrollSnapDebounce && (roll || unroll);
         if (scrollTo) {
 
             if (closestMagnets.length) magnet = closestMagnets[0];
-            $(scroller).addClass("sticky-prevent-scroll");
 
+            $(scroller).addClass("sticky-prevent-scroll");
+            if (Sticky.get("scrolllock"))
+                Sticky.disableScroll();
+
+            scrollSnapDebounce = true;
             Sticky.scrollTo({
 
-                top:magnet.offsetTop - Sticky.getScrollPadding(scroller).top, 
-                left:magnet.offsetLeft - Sticky.getScrollPadding(scroller).left, 
-                easing:Settings["smoothscroll_easing"], 
-                duration: Settings["smoothscroll_duration"], 
+                top:magnet.offsetTop - Sticky.getScrollPadding(scroller).top,
+                left:magnet.offsetLeft - Sticky.getScrollPadding(scroller).left,
+                easing:Settings["smoothscroll_easing"],
+                duration: Settings["smoothscroll_duration"],
                 speed: Settings["smoothscroll_speed"]
-                
-            }, function() {
 
-                if(Sticky.get("scrolllock")) {
-
-                    scrollSnapDebounce = true;
-                    var scrollLock = setInterval(function() {
-            
-                        window.scrollTo({
-                            top : magnet.offsetTop - Sticky.getScrollPadding(scroller).top,
-                            left: magnet.offsetLeft - Sticky.getScrollPadding(scroller).left,
-                            behavior: "smooth"
-                        });
-
-                    }, 1000*Sticky.parseDuration(Sticky.get("tick")));
-
-                    var scrollDebounce = setTimeout(function() {
+                }, Sticky.debounce(function() {
 
                         scrollSnapDebounce = false;
-
                         $(scroller).removeClass("sticky-prevent-scroll");
-                        $(scroller).off('scrolldelta.sticky.snap');
+                        if (Sticky.get("scrolllock"))
+                            Sticky.enableScroll();
 
-                        clearTimeout(scrollDebounce);
-                        clearInterval(scrollLock);
-
-                    }, 1000*Sticky.parseDuration(Sticky.get("debounce")));
-                }
-
-            }, scroller);
+                }, 1000*Sticky.parseDuration(Sticky.get("debounce"))), scroller);
 
             $(magnets).each((e) => $(magnets[e].element).removeClass("magnet closest"));
             $(magnet.element).addClass("magnet");
@@ -792,7 +855,7 @@ $.fn.serializeObject = function () {
 
                 return m1.offsetTop > m2.offsetTop ? 1 : (m1.offsetTop < m2.offsetTop ?  -1 : 0);
 
-            }).map(function() { 
+            }).map(function() {
 
                 var scroller = $(this).closestScrollable()[0];
                 var scrollTop     = $(scroller).scrollTop() + Sticky.getScrollPadding(scroller).top;
@@ -822,53 +885,90 @@ $.fn.serializeObject = function () {
     Sticky.onScrollDelta = function (e) {
 
         if (Settings.debug) console.log("Sticky delta scrolling.. ", e.scrollY, e.scrollX, e.scrollT, e.screen);
-        
+
+        var magnets = Sticky.getMagnets(e.target);
+        if(magnets.length) {
+
+            var currentId  = Sticky.closestToZero(magnets.map(function() { return this.offsetTop-window.scrollY; }));
+            if(currentId == 0) $(e.target).find(".sticky-magnet-first").removeClass("show");
+            else $(e.target).find(".sticky-magnet-first").addClass("show");
+
+            if(currentId == magnets.length-1) $(e.target).find(".sticky-magnet-last").removeClass("show");
+            else $(e.target).find(".sticky-magnet-last").addClass("show");
+
+        } else {
+
+            $(e.target).find(".sticky-magnet-first").hide();
+            $(e.target).find(".sticky-magnet-last").hide();
+        }
+
+
         $(e.target).find(".sticky-headlines").each(function() {
+
+            if(!Sticky.get("replacehash")) return;
 
             var hash = null;
             if(Settings.debug) console.log(show,"Sticky headlines:", $(this.querySelectorAll('*[id]')));
 
-            var el = $(this.querySelectorAll('*[id]')).filter(function() {
+            var elAll = $(this.querySelectorAll('*[id]')).filter(function() {
 
                 if(this === $(Settings.identifier)) return false;
-                
-                return this.offsetTop - Sticky.getScrollPadding(e.target[0]).top - e.target.scrollTop() - 1 <= 0;
+
+                return this.offsetTop - Sticky.getScrollPadding(e.target[0]).top - e.target.scrollTop() - 1 < 0;
 
             }).sort(function (el1, el2) {
 
-                return el1.offsetTop > el2.offsetTop ? -1 
+                return el1.offsetTop > el2.offsetTop ? -1
                     : (el1.offsetTop < el2.offsetTop ?  1 : 0);
             });
 
-            if(el.length !== 0)
-                hash = "#" + el[0].getAttribute("id");
+            firstTriggered = false;
+            if(elAll.length)
+                firstTriggered = this.offsetTop - Sticky.getScrollPadding(e.target[0]).top - e.target.scrollTop() - 1 < 0;
 
-            if(e.first || currentHash != hash) {
+            var el = elAll.filter(function() {
 
-                $(currentHash).removeClass("highlight");
-                $('a[href^=\''+currentHash+'\']').removeClass("highlight");
+                if(this === $(Settings.identifier)) return false;
 
-                if(hash) {
-                    $(hash).addClass("highlight");
-                    $('a[href^=\''+hash+'\']').addClass("highlight");
+                return this.offsetTop + Sticky.getScrollPadding(e.target[0]).bottom - e.target.scrollTop() - 1 + this.scrollHeight > 0;
+            });
+
+            if(el.length == 0 && firstTriggered) currentHash = window.location.hash;
+            else {
+
+                if(el.length != 0)
+                    hash = "#" + el[0].getAttribute("id");
+
+                if(e.first || currentHash != hash) {
+
+                    $(currentHash).removeClass("highlight");
+                    $('a[href^=\''+currentHash+'\']').removeClass("highlight");
+
+                    if(hash) {
+                        $(hash).addClass("highlight");
+                        $('a[href^=\''+hash+'\']').addClass("highlight");
+                    }
+
+                    if(Sticky.userScroll(this)) {
+
+                        window.replaceHash(hash, false);
+                            dispatchEvent(new HashChangeEvent("hashchange"))
+                    }
+
+                    currentHash = hash;
                 }
-
-                window.replaceHash(hash, false);
-                if(Sticky.userScroll(this))
-                    dispatchEvent(new HashChangeEvent("hashchange"))
-
-                currentHash = hash;
             }
+
         });
 
         $(e.target).find(".sticky-top").each(function() {
-            
+
             var scrollhide = $(this).attr("aria-scrollhide") || Sticky.get("scrollhide");
                 scrollhide = scrollhide === "false" ? false : scrollhide;
 
             var that = this;
             if(scrollhide) {
-                
+
                 var isAnchor = Sticky.epsilon(e.scrollY.top, anchorY);
                 if(e.first || isAnchor) {
 
@@ -884,11 +984,11 @@ $.fn.serializeObject = function () {
 
                     // Action element
                     if(e.scrollY.delta < 0 && e.scrollY.bottom > 0) {
-                        
+
                         $(this).addClass("show");
                         $(this).removeAttr("style");
                         if(!e.first) $(this).removeClass("skip-transition");
-                        
+
                     } else if(e.scrollY.delta > 0){
 
                         var borderThickness = parseInt($(this).css("border-bottom-width")) + parseInt($(this).css("border-top-width"));
@@ -949,7 +1049,7 @@ $.fn.serializeObject = function () {
             var threshold = 1000*Sticky.parseDuration(Sticky.get("threshold"));
             var scrollHint = Math.min(1, Math.max(0, parseFloat(Sticky.get("scrollhint"))));
             var hasHint = $(this).hasClass("hint");
-            
+
             if(e.reset) hasReset = true;
             if(scrollHint) {
 
@@ -958,7 +1058,7 @@ $.fn.serializeObject = function () {
                     $(this).off("click.hint");
                     hasReset = false;
                 }
-                
+
                 if(e.scrollT.delta.bottom > scrollHint*threshold && !hasHint) {
                     $(this).addClass("hint");
                     $(this).on("click.hint", function() { $(this).removeClass("hint").addClass("show"); });
@@ -1055,18 +1155,18 @@ $.fn.serializeObject = function () {
 
                 var transition = [];
                 for (var i = 0; i < transitionProperty.length; i++)
-                    transition[i] = transitionProperty[i] + " " + 
+                    transition[i] = transitionProperty[i] + " " +
                                     Sticky.parseDuration(transitionDuration[i])+"s "+
                                     Sticky.parseDuration(transitionDelay[i])+"s";
 
                 $(this).css("transition", transition.join(","));
             }
-            
+
             //
             // Display logic
             var extraEaseIn = this.dataset.stickyEasein;
             if (extraEaseIn === undefined) extraEaseIn = this.dataset.stickyEaseinout;
-            if (extraEaseIn === undefined && $(this).hasClass("sticky-easein")) 
+            if (extraEaseIn === undefined && $(this).hasClass("sticky-easein"))
                 extraEaseIn = Sticky.get("easein");
 
             if(extraEaseIn !== undefined) {
@@ -1077,7 +1177,7 @@ $.fn.serializeObject = function () {
 
             var extraEaseOut = this.dataset.stickyEaseout;
             if (extraEaseOut === undefined) extraEaseOut = this.dataset.stickyEaseinout;
-            if (extraEaseOut === undefined && $(this).hasClass("sticky-easeout")) 
+            if (extraEaseOut === undefined && $(this).hasClass("sticky-easeout"))
                 extraEaseOut = Sticky.get("easeout");
 
             if(extraEaseOut !== undefined) {
@@ -1096,7 +1196,7 @@ $.fn.serializeObject = function () {
             // Y = 0 : viewport top = element bottom
             var top    = this.offsetTop                   - (e.scrollY.top+e.screen.vh);
 
-            // Y = 0 : viewport bottom = element top 
+            // Y = 0 : viewport bottom = element top
             var bottom = this.offsetTop+this.clientHeight - (e.scrollY.top);
 
             var isBiggerThanViewport = (e.screen.vh < this.clienHeight);
@@ -1110,13 +1210,13 @@ $.fn.serializeObject = function () {
                 var isBelow   = bottom + extraEaseIn < 0;
                 var isBetween = isBiggerThanViewport
                     ? !isAbove && (top    + this.clientHeight + extraEaseIn > 0) &&
-                      !isBelow && (bottom - this.clientHeight - extraEaseIn < 0) 
+                      !isBelow && (bottom - this.clientHeight - extraEaseIn < 0)
                     : !isAbove && (top    + this.clientHeight + extraEaseIn < 0) &&
                       !isBelow && (bottom - this.clientHeight - extraEaseIn > 0);
 
                 if(Settings.debug) console.log(show,"Sticky ease-in:",isAbove,isBelow,isBetween);
                 show = (!isAbove && !isBelow);
-            
+
             } else if(e.first) show = true;
 
             if(easeOut) {
@@ -1125,7 +1225,7 @@ $.fn.serializeObject = function () {
                 var isBelow   = bottom + extraEaseOut < 0;
                 var isBetween = isBiggerThanViewport
                     ? !isAbove && (top    + this.clientHeight + extraEaseOut > 0) &&
-                      !isBelow && (bottom - this.clientHeight - extraEaseOut < 0) 
+                      !isBelow && (bottom - this.clientHeight - extraEaseOut < 0)
                     : !isAbove && (top    + this.clientHeight + extraEaseOut < 0) &&
                       !isBelow && (bottom - this.clientHeight - extraEaseOut > 0);
 
@@ -1161,15 +1261,15 @@ $.fn.serializeObject = function () {
     Sticky.onAutoscroll = function(el) {
 
         Sticky.scrollTo(
-            {top: this.offsetTop-this.offsetHeight, left:0, speed: Sticky.get("autoscroll_speed"), duration: Sticky.get("autoscroll_duration")}, 
+            {top: this.offsetTop-this.offsetHeight, left:0, speed: Sticky.get("autoscroll_speed"), duration: Sticky.get("autoscroll_duration")},
             () => Sticky.get("autoscroll_bouncing") ? Sticky.scrollTo(
-                {top: 0, left:0, speed: Sticky.get("autoscroll_speed"), duration: Sticky.get("autoscroll_duration")}, 
+                {top: 0, left:0, speed: Sticky.get("autoscroll_speed"), duration: Sticky.get("autoscroll_duration")},
                 () => Sticky.onAutoscroll(el)
             ) : null
         );
 
-        el.one("scroll", function() { 
-            
+        el.one("scroll", function() {
+
             var userScroll = Sticky.autoScroll(el);
             // Make sure autoscroll stops when user scroll for the first time
             if(Sticky.get("autoscroll") && userScroll) {
@@ -1186,8 +1286,13 @@ $.fn.serializeObject = function () {
 
     Sticky.onLoad = function (el = window)
     {
-        Sticky.reset(el);
+        if(Sticky.get("disable") === true) {
 
+            $(".sticky").addClass("sticky-disabled");
+            return;
+        }
+
+        Sticky.reset(el);
         $(el).on('wheel.sticky', Sticky.onWheel);
         $(el).on('scrolldelta.sticky', Sticky.onScrollDelta);
         $(el).on('scrolldelta.sticky', Sticky.debounce(Sticky.onScrollDebounce, 1000*Sticky.parseDuration(Sticky.get("debounce"))));
@@ -1203,33 +1308,36 @@ $.fn.serializeObject = function () {
         // Sticky magnet control
         if(Sticky.get("scrollsnap"))
         {
-            $(".sticky-magnet-first, .sticky-magnet-fast-backward"                    ).on("click", function() { Sticky.scrollToFirstSnap(); });
-            $(".sticky-magnet-prev , .sticky-magnet-backward, .sticky-magnet-previous").on("click", function() { Sticky.scrollToPreviousSnap(); });
-            $(".sticky-magnet-next , .sticky-magnet-forward"                          ).on("click", function() { Sticky.scrollToNextSnap(); });
-            $(".sticky-magnet-last , .sticky-magnet-fast-forward"                     ).on("click", function() { Sticky.scrollToLastSnap(); });
-        
+            $(".sticky-magnet-first").on("click", function() { Sticky.scrollToFirstSnap(); });
+            $(".sticky-magnet-prev" ).on("click", function() { Sticky.scrollToPreviousSnap(); });
+            $(".sticky-magnet-next" ).on("click", function() { Sticky.scrollToNextSnap(); });
+            $(".sticky-magnet-last" ).on("click", function() { Sticky.scrollToLastSnap(); });
+
             $(el).on('scrolldelta.sticky.snap', Sticky.onScrollSnap);
         }
 
         // Sticky autoscroll
         if(Sticky.get("autoscroll"))
             $(".sticky-autoscroll").each(Sticky.onAutoscroll);
-    
+
         return this;
     }
 
-    $(window).on("hashchange", (e) => Sticky.reset());
     $(window).on("onbeforeunload", function() {
-        Sticky.reset(); 
+
+        Sticky.reset();
         $(window).off('wheel.sticky');
         $(window).off('scrolldelta.sticky');
+        $(window).off("hashchange");
         $('a[href^="#"]').off();
     });
 
     $(window).on("load", function() {
+
         Sticky.onLoad();
         $(window).trigger("scroll.sticky");
+        $(window).on("hashchange", (e) => Sticky.reset());
     });
-    
+
     return Sticky;
 });

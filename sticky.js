@@ -916,7 +916,8 @@ $.fn.serializeObject = function () {
                 if(this === $(Settings.identifier)) return false;
                 if(this === $(Settings.identifier)) return false;
 
-                return this.offsetTop - Sticky.getScrollPadding(e.target[0]).top - e.target.scrollTop() - 1 < 0;
+                var targetScrollTop = this.getBoundingClientRect().top + document.documentElement.scrollTop;
+                return targetScrollTop - Sticky.getScrollPadding(e.target[0]).top - e.target.scrollTop() - 1 < 0;
 
             }).sort(function (el1, el2) {
 
@@ -928,7 +929,8 @@ $.fn.serializeObject = function () {
 
                 if(this === $(Settings.identifier)) return false;
 
-                return this.offsetTop + Sticky.getScrollPadding(e.target[0]).bottom - e.target.scrollTop() - 1 + this.scrollHeight > 0;
+                var targetScrollTop = this.getBoundingClientRect().top + document.documentElement.scrollTop;
+                return targetScrollTop + Sticky.getScrollPadding(e.target[0]).bottom - e.target.scrollTop() - 1 + this.scrollHeight > 0;
             });
 
             var currentHashEl = $(window.location.hash)[0];

@@ -952,9 +952,7 @@ $.fn.serializeObject = function () {
                 if(this === $(Settings.identifier)) return false;
                 if(this === $(Settings.identifier)) return false;
 
-                var targetScrollTop = this.getBoundingClientRect().top + document.documentElement.scrollTop;
-                console.log(this.getBoundingClientRect().top, document.documentElement.scrollTop, $(scroller).scrollTop());
-                return targetScrollTop - Sticky.getScrollPadding(scroller).top - $(scroller).scrollTop() - 1 < 0;
+                return this.getBoundingClientRect().top < Sticky.getScrollPadding(scroller).top + 1;
 
             }).sort(function (el1, el2) {
 
@@ -962,20 +960,16 @@ $.fn.serializeObject = function () {
                     : (el1.offsetTop < el2.offsetTop ?  1 : 0);
             });
 
-            console.log(elAll);
-
             var el = elAll.filter(function() {
 
                 if(this === $(Settings.identifier)) return false;
 
-                var targetScrollTop = this.getBoundingClientRect().top + document.documentElement.scrollTop;
-                return targetScrollTop - Sticky.getScrollPadding(scroller).top - $(scroller).scrollTop() - 1 + this.scrollHeight > 0;
+                return this.getBoundingClientRect().top > Sticky.getScrollPadding(scroller).top + 1 - this.scrollHeight;
             });
 
             var currentHashEl = $(window.location.hash)[0];
             var atTop = $(window).scrollTop() < 2;
             var atBottom = $(window).scrollTop() + $(window).height() - $(document).height() > -2;
-            console.log("-----",el);
 
             if((el.length == 0 && !atTop) || (!elAll.has(currentHashEl) && atBottom)) currentHash = window.location.hash;
             else {
@@ -997,7 +991,6 @@ $.fn.serializeObject = function () {
 
                     if(Sticky.userScroll(el) || $(el).hasClass("sticky-magnet") || (hash == null && elAll.length == 0)) {
 
-                        console.log("OK", scroller, el, Sticky.getScrollPadding(scroller).top);
                         window.replaceHash(hash, false);
                         dispatchEvent(new HashChangeEvent("hashchange"))
                     }
@@ -1254,7 +1247,7 @@ $.fn.serializeObject = function () {
 
             if (easeIn) {
 
-                    var isAbove   = top    - extraEaseIn > 0;
+                var isAbove   = top    - extraEaseIn > 0;
                 var isBelow   = bottom + extraEaseIn < 0;
                 var isBetween = isBiggerThanViewport
                     ? !isAbove && (top    + this.clientHeight + extraEaseIn > 0) &&

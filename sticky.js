@@ -920,6 +920,7 @@ $.fn.serializeObject = function () {
 
         if (Settings.debug) console.log("Sticky delta scrolling.. ", e.scrollY, e.scrollX, e.scrollT, e.screen);
 
+        var scroller = $(this).closestScrollable();
         var magnets = Sticky.getMagnets(e.target);
         if(magnets.length) {
 
@@ -952,7 +953,8 @@ $.fn.serializeObject = function () {
                 if(this === $(Settings.identifier)) return false;
 
                 var targetScrollTop = this.getBoundingClientRect().top + document.documentElement.scrollTop;
-                return targetScrollTop - Sticky.getScrollPadding(e.target[0]).top - e.target.scrollTop() - 1 < 0;
+                console.log(this.getBoundingClientRect().top, document.documentElement.scrollTop, $(scroller).scrollTop());
+                return targetScrollTop - Sticky.getScrollPadding(scroller).top - $(scroller).scrollTop() - 1 < 0;
 
             }).sort(function (el1, el2) {
 
@@ -960,17 +962,20 @@ $.fn.serializeObject = function () {
                     : (el1.offsetTop < el2.offsetTop ?  1 : 0);
             });
 
+            console.log(elAll);
+
             var el = elAll.filter(function() {
 
                 if(this === $(Settings.identifier)) return false;
 
                 var targetScrollTop = this.getBoundingClientRect().top + document.documentElement.scrollTop;
-                return targetScrollTop + Sticky.getScrollPadding(e.target[0]).bottom - e.target.scrollTop() - 1 + this.scrollHeight > 0;
+                return targetScrollTop - Sticky.getScrollPadding(scroller).top - $(scroller).scrollTop() - 1 + this.scrollHeight > 0;
             });
 
             var currentHashEl = $(window.location.hash)[0];
             var atTop = $(window).scrollTop() < 2;
             var atBottom = $(window).scrollTop() + $(window).height() - $(document).height() > -2;
+            console.log("-----",el);
 
             if((el.length == 0 && !atTop) || (!elAll.has(currentHashEl) && atBottom)) currentHash = window.location.hash;
             else {
@@ -992,6 +997,7 @@ $.fn.serializeObject = function () {
 
                     if(Sticky.userScroll(el) || $(el).hasClass("sticky-magnet") || (hash == null && elAll.length == 0)) {
 
+                        console.log("OK", scroller, el, Sticky.getScrollPadding(scroller).top);
                         window.replaceHash(hash, false);
                         dispatchEvent(new HashChangeEvent("hashchange"))
                     }

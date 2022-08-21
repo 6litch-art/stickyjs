@@ -88,7 +88,7 @@ $.fn.closestScrollable = function()
     return $(this).map((i) => {
 
         var target = this[i] === window ? document.documentElement : this[i];
-        
+
         while (target !== document.documentElement) {
 
             if($(target).isScrollable()[0]) return target;
@@ -995,7 +995,7 @@ $.fn.serializeObject = function () {
             else {
 
                 if(el.length > 0) hash = "#" + el[0].getAttribute("id");
-               
+
                 if(e.first || currentHash != hash) {
 
                     if(e.first) hash = currentHash;
@@ -1051,9 +1051,9 @@ $.fn.serializeObject = function () {
 
                     } else if(e.scrollY.delta > 0){
 
-                        var borderThickness = parseInt($(this).css("border-bottom-width")) 
+                        var borderThickness = parseInt($(this).css("border-bottom-width"))
                                             + parseInt($(this).css("border-top-width"));
-                                            
+
                         $(this).removeClass("show");
                         $(this).css("top", -this.clientHeight-borderThickness);
                         if(e.scrollY.top == e.scrollY.delta && !e.first)
@@ -1322,7 +1322,7 @@ $.fn.serializeObject = function () {
 
     Sticky.onAutoscroll = function() {
 
-        if(!$(this).data("autoscroll-prevent")) return;
+        if($(this).data("autoscroll-prevent")) return;
 
         var easing = $(this).data("autoscroll-easing");
         if (easing == undefined) easing = Sticky.get("autoscroll_easing");
@@ -1336,7 +1336,7 @@ $.fn.serializeObject = function () {
         if (reverse == undefined) reverse = Sticky.get("autoscroll_reverse");
         var preventMouse = $(this).data("autoscroll-prevent-mouse");
         if (preventMouse == undefined) preventMouse = Sticky.get("autoscroll_preventmouse");
-        
+
         var autoscrollX = $(this).data("autoscroll-x");
         if(autoscrollX == undefined) autoscrollX = Sticky.get("autoscroll");
         var autoscrollY = $(this).data("autoscroll-y");
@@ -1399,7 +1399,6 @@ $.fn.serializeObject = function () {
 
         }.bind(this);
 
-        
         $(this).off("mousewheel.autoscroll touchmove.autoscroll");
         $(this).one("mousewheel.autoscroll touchmove.autoscroll", function() {
 
@@ -1472,35 +1471,35 @@ $.fn.serializeObject = function () {
                 if (reverseSpeed == undefined) reverseSpeed = Sticky.get("autoscroll_speed_reverse");
                 var reverseDuration = $(this).data("autoscroll-duration-reverse");
                 if (reverseDuration == undefined) reverseDuration = Sticky.get("autoscroll_duration_reverse");
-        
+
                 var startOver = $(this).data("autoscroll-startover");
                 if (startOver == undefined) startOver = Sticky.get("autoscroll_startover");
-        
+
                 var delay = $(this).data("autoscroll-delay");
                 if (delay == undefined) delay = Sticky.get("autoscroll_delay");
 
                 var timeout = undefined;
                 $(this).data("autoscroll-prevent", false);
-                
+
                 var payloadAutoscroll = function() {
-                    
+
                     setTimeout(() => Sticky.onAutoscroll.call(this), 1000*Sticky.parseDuration(delay + 1));
                     timeout = undefined;
 
                 }.bind(this);
-        
+
                 if($(this).data("autoscroll-reverse")) {
-                    
+
                     var scroller = $(this).closestScrollable();
                     var scrollWidth  = $(scroller).prop('scrollWidth') - scroller.innerWidth();
                     var scrollHeight = $(scroller).prop('scrollHeight')- scroller.innerHeight();
-                    
+
                     timeout = setTimeout(() => Sticky.scrollTo({
-                                left:scrollWidth, 
-                                top:scrollHeight, 
-                                duration:reverseDuration, 
+                                left:scrollWidth,
+                                top:scrollHeight,
+                                duration:reverseDuration,
                                 speed:reverseSpeed
-                            }, 
+                            },
                             payloadAutoscroll, scroller
                         ), 1000*Sticky.parseDuration(reverseDelay + 1)
                     );

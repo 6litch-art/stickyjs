@@ -1384,7 +1384,7 @@ $.fn.serializeObject = function () {
 
             Sticky.scrollTo(scrollOptions, function() {
 
-                if( !bouncing || !$(this).data("autoscroll-prevent") ) return;
+                if( !bouncing || $(this).data("autoscroll-prevent") ) return;
                 $(this).prop("user-scroll", true); // Prevent auto scroll to be disabled when going backward
 
                 Sticky.scrollTo(scrollBackOptions, function() {
@@ -1506,7 +1506,7 @@ $.fn.serializeObject = function () {
 
                     $(el).one("mousedown.userscroll wheel.userscroll DOMMouseScroll.userscroll mousewheel.userscroll touchmove.userscroll", function() {
 
-                        if(startOver) $(this).data("autoscroll-prevent", true);
+                        if(!startOver) $(this).data("autoscroll-prevent", true);
                         if(timeout === undefined )
                             return;
 

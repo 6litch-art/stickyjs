@@ -587,42 +587,46 @@ $.fn.serializeObject = function () {
     Sticky.userScroll = function(el = undefined) { return $(el === undefined ? document.documentElement : el).closestScrollable().prop("user-scroll") ?? true; }
     Sticky.scrollTo = function(dict, callback = function() {}, el = window)
     {
-        var scroller = $(el).closestScrollable();
+        var origin = $(el)[0];
+        if (el === window  )
+            el = document.documentElement;
+        if (el === document)
+            el = document.documentElement;
 
         var cancelable = dict["cancelable"] ?? false;
-            
-        if(!Sticky.userScroll(scroller)) {
 
-            if($(scroller).prop("cancelable")) {
+        if(!Sticky.userScroll(el)) {
 
-                $(scroller).prop("user-scroll", true);
-                $(scroller).stop();
+            if($(el).prop("cancelable")) {
+
+                $(el).prop("user-scroll", true);
+                $(el).stop();
             }
 
             return;
         }
 
-        $(scroller).prop("user-scroll", false);
+        $(el).prop("user-scroll", false);
         if(cancelable) {
 
-            $(scroller).prop("cancelable", true);
-            $(scroller).on("scroll.userscroll mousedown.userscroll wheel.userscroll DOMMouseScroll.userscroll mousewheel.userscroll touchmove.userscroll", function(e) {
+            $(el).prop("cancelable", true);
+            $(el).on("scroll.userscroll mousedown.userscroll wheel.userscroll DOMMouseScroll.userscroll mousewheel.userscroll touchmove.userscroll", function(e) {
                 $(this).prop("user-scroll", true);
             });
         }
 
-        var maxScrollX = $(scroller)[0].scrollWidth - Math.round($(scroller).innerWidth());
-        if (maxScrollX == 0) maxScrollX = undefined;
-        var maxScrollY = $(scroller)[0].scrollHeight - Math.round($(scroller).innerHeight());
-        if (maxScrollY == 0) maxScrollY = undefined;
+        var maxScrollX = $(el)[0].scrollWidth  - Math.round($(el).innerWidth());
+        if (maxScrollX == 0) maxScrollX = Math.round($(el).innerWidth());
+        var maxScrollY = $(el)[0].scrollHeight - Math.round($(el).innerHeight());
+        if (maxScrollY == 0) maxScrollY = Math.round($(el).innerHeight());
 
-        console.log(scroller);
-        scrollTop  = Math.max(0, Math.min(dict["top"]  ?? scroller.scrollTop() , maxScrollY || Math.round($(scroller).innerHeight())));
-        scrollLeft = Math.max(0, Math.min(dict["left"] ?? scroller.scrollLeft(), maxScrollX || Math.round($(scroller).innerWidth ())));
+        scrollTop  = Math.max(0, Math.min(dict["top"] ?? el.scrollTop, maxScrollY));
+        scrollLeft = Math.max(0, Math.min(dict["left"] ?? el.scrollLeft, maxScrollX));
 
         speed    = parseFloat(dict["speed"] ?? 0);
         easing   = dict["easing"] ?? "swing";
         debounce = dict["debounce"] ?? 0;
+        combine  = dict["combine"] ?? true;
 
         duration  = 1000*Transparent.parseDuration(dict["duration"] ?? 0);
         durationX = 1000*Transparent.parseDuration(dict["duration-x"] ?? dict["duration"] ?? 0);
@@ -630,13 +634,14 @@ $.fn.serializeObject = function () {
 
         if(speed) {
 
-            var currentScrollX = $(scroller)[0].scrollLeft;
+            var currentScrollX = $(el)[0].scrollLeft;
             if(currentScrollX < scrollLeft || scrollLeft == 0) // Going to the right
                 distanceX = Math.abs(scrollLeft - currentScrollX);
             else // Going back to 0 position
                 distanceX = currentScrollX;
 
-            var currentScrollY = $(scroller)[0].scrollTop;
+
+            var currentScrollY = $(el)[0].scrollTop;
             if(currentScrollY <= scrollTop || scrollTop == 0) // Going to the right
                 distanceY = Math.abs(scrollTop - currentScrollY);
             else // Going back to 0 position
@@ -650,33 +655,38 @@ $.fn.serializeObject = function () {
         var callbackWrapper = function() {
 
             if(cancelable)
-                $(scroller).off("scroll.user mousedown.user wheel.user DOMMouseScroll.user mousewheel.user touchmove.user", () => null);
+                $(el).off("scroll.user mousedown.user wheel.user DOMMouseScroll.user mousewheel.user touchmove.user", () => null);
 
-            window.dispatchEvent(new Event('scroll'));
+            origin.dispatchEvent(new Event('scroll'));
             callback();
 
-            $(scroller).prop("user-scroll", true);
+            $(el).prop("user-scroll", true);
         };
 
         if(duration == 0) {
 
-            $(scroller).scrollTop(scrollTop);
-            $(scroller).scrollLeft(scrollLeft);
+            $(el).scrollTop(scrollTop);
+            $(el).scrollLeft(scrollLeft);
 
-            window.dispatchEvent(new Event('scroll'));
+            origin.dispatchEvent(new Event('scroll'));
             callback();
 
-            $(scroller).prop("user-scroll", true);
+            $(el).prop("user-scroll", true);
 
-        } else {
+        } /*else if (combine) {
 
-            $(scroller).animate({scrollTop: scrollTop}, durationX, easing,
-                () => $(scroller).animate({scrollLeft: scrollLeft}, durationY, easing, Transparent.debounce(callbackWrapper, debounce))
+            $(el).animate({scrollTop: scrollTop, scrollLeft: scrollLeft}, duration, easing, callbackWrapper);
+
+        }*/ else {
+
+            $(el).animate({scrollTop: scrollTop}, durationY, easing,
+                () => $(el).animate({scrollLeft: scrollLeft}, durationX, easing, Transparent.debounce(callbackWrapper, debounce))
             );
         }
 
         return this;
     }
+
 
     Sticky.scrollToFirstSnap = function (el = window, callback = function() {})
     {
@@ -1312,6 +1322,8 @@ $.fn.serializeObject = function () {
 
     Sticky.onAutoscroll = function() {
 
+        if(!$(this).data("autoscroll-prevent")) return;
+
         var easing = $(this).data("autoscroll-easing");
         if (easing == undefined) easing = Sticky.get("autoscroll_easing");
         var speed = $(this).data("autoscroll-speed");
@@ -1345,8 +1357,8 @@ $.fn.serializeObject = function () {
             var atLeft  = $(this).scrollLeft() < 1;
             var atRight = Math.abs($(this).scrollLeft() - scrollWidth) < 1;
 
-            var noScrollY = (atTop && atBottom) || scrollHeight > thresholdMinY;
-            var noScrollX = (atLeft && atRight) || scrollWidth  > thresholdMinX;
+            var noScrollY = (atTop && atBottom) || scrollHeight < thresholdMinY;
+            var noScrollX = (atLeft && atRight) || scrollWidth  < thresholdMinX;
             if ((noScrollY && noScrollX   ) ||
                 (noScrollY && !autoscrollX) ||
                 (noScrollX && !autoscrollY) ||
@@ -1372,9 +1384,9 @@ $.fn.serializeObject = function () {
 
             Sticky.scrollTo(scrollOptions, function() {
 
-                if( !bouncing ) return;
+                if( !bouncing || !$(this).data("autoscroll-prevent") ) return;
                 $(this).prop("user-scroll", true); // Prevent auto scroll to be disabled when going backward
-                
+
                 Sticky.scrollTo(scrollBackOptions, function() {
 
                     Sticky.onAutoscroll.call(this);
@@ -1387,20 +1399,32 @@ $.fn.serializeObject = function () {
 
         }.bind(this);
 
+        
+        $(this).off("mousewheel.autoscroll touchmove.autoscroll");
+        $(this).one("mousewheel.autoscroll touchmove.autoscroll", function() {
+
+            $(this).prop("user-scroll", true);
+            $(this).stop();
+        });
+
         if(!preventMouse) {
 
-            $(this).on("mouseenter touchend", function() {
+            $(this).off("mouseenter.autoscroll touchend.autoscroll");
+            $(this).on("mouseenter.autoscroll touchend.autoscroll", function() {
 
                 $(this).prop("user-scroll", true);
                 $(this).stop();
 
             }.bind(this));
 
-            if(startOver)
-                $(this).on("mouseleave touchstart", function() { _onAutoscroll(); }.bind(this));
+            if(startOver) {
+                $(this).off("mouseenter.autoscroll touchend.autoscroll");
+                $(this).on("mouseleave.autoscroll touchstart.autoscroll", function() { _onAutoscroll(); }.bind(this));
+            }
         }
 
-        _onAutoscroll();
+
+        if(!$(this).data("autoscroll-prevent")) _onAutoscroll();
 
         return this;
     }
@@ -1449,10 +1473,15 @@ $.fn.serializeObject = function () {
                 var reverseDuration = $(this).data("autoscroll-duration-reverse");
                 if (reverseDuration == undefined) reverseDuration = Sticky.get("autoscroll_duration_reverse");
         
+                var startOver = $(this).data("autoscroll-startover");
+                if (startOver == undefined) startOver = Sticky.get("autoscroll_startover");
+        
                 var delay = $(this).data("autoscroll-delay");
                 if (delay == undefined) delay = Sticky.get("autoscroll_delay");
 
                 var timeout = undefined;
+                $(this).data("autoscroll-prevent", false);
+                
                 var payloadAutoscroll = function() {
                     
                     setTimeout(() => Sticky.onAutoscroll.call(this), 1000*Sticky.parseDuration(delay + 1));
@@ -1461,17 +1490,25 @@ $.fn.serializeObject = function () {
                 }.bind(this);
         
                 if($(this).data("autoscroll-reverse")) {
-
+                    
                     var scroller = $(this).closestScrollable();
-                    timeout = setTimeout(() => Sticky.scrollTo(
-                            {left:$(scroller)[0].scrollWidth, top:$(scroller)[0].scrollHeight, duration:reverseDuration, speed, reverseSpeed}, 
+                    var scrollWidth  = $(scroller).prop('scrollWidth') - scroller.innerWidth();
+                    var scrollHeight = $(scroller).prop('scrollHeight')- scroller.innerHeight();
+                    
+                    timeout = setTimeout(() => Sticky.scrollTo({
+                                left:scrollWidth, 
+                                top:scrollHeight, 
+                                duration:reverseDuration, 
+                                speed:reverseSpeed
+                            }, 
                             payloadAutoscroll, scroller
                         ), 1000*Sticky.parseDuration(reverseDelay + 1)
                     );
 
                     $(el).one("mousedown.userscroll wheel.userscroll DOMMouseScroll.userscroll mousewheel.userscroll touchmove.userscroll", function() {
 
-                        if(timeout === undefined ) 
+                        if(startOver) $(this).data("autoscroll-prevent", true);
+                        if(timeout === undefined )
                             return;
 
                         clearTimeout(timeout);

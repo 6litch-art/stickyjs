@@ -37,6 +37,22 @@
 
 })(window);
 
+$.fn.serializeObject = function() {
+    var o = {};
+    var a = this.serializeArray();
+    $.each(a, function() {
+        if (o[this.name]) {
+            if (!o[this.name].push) {
+                o[this.name] = [o[this.name]];
+            }
+            o[this.name].push(this.value || '');
+        } else {
+            o[this.name] = this.value || '';
+        }
+    });
+    return o;
+};
+
 $.fn.isScrollable  = function() { return $(this).isScrollableX() || $(this).isScrollableY(); }
 $.fn.isScrollableX = function() {
 
@@ -72,7 +88,7 @@ $.fn.closestScrollable = function()
     return $(this).map((i) => {
 
         var target = this[i] === window ? document.documentElement : this[i];
-
+        
         while (target !== document.documentElement) {
 
             if($(target).isScrollable()[0]) return target;
@@ -920,7 +936,6 @@ $.fn.serializeObject = function () {
 
         if (Settings.debug) console.log("Sticky delta scrolling.. ", e.scrollY, e.scrollX, e.scrollT, e.screen);
 
-        var scroller = $(this).closestScrollable();
         var magnets = Sticky.getMagnets(e.target);
         if(magnets.length) {
 
@@ -937,6 +952,9 @@ $.fn.serializeObject = function () {
             $(e.target).find(".sticky-magnet-last").hide();
         }
 
+        var scroller = $(this).closestScrollable();
+        if(!Sticky.userScroll(scroller)) return;
+
         function PayloadReplaceHash() {
 
             if(!Sticky.get("replacehash")) return;
@@ -950,8 +968,6 @@ $.fn.serializeObject = function () {
             var elAll = $(ids).filter(function() {
 
                 if(this === $(Settings.identifier)) return false;
-                if(this === $(Settings.identifier)) return false;
-
                 return this.getBoundingClientRect().top < Sticky.getScrollPadding(scroller).top + 1;
 
             }).sort(function (el1, el2) {
@@ -963,8 +979,7 @@ $.fn.serializeObject = function () {
             var el = elAll.filter(function() {
 
                 if(this === $(Settings.identifier)) return false;
-
-                return this.getBoundingClientRect().top > Sticky.getScrollPadding(scroller).top + 1 - this.scrollHeight;
+                return this.getBoundingClientRect().top + this.scrollHeight > Sticky.getScrollPadding(scroller).top + 1;
             });
 
             var currentHashEl = $(window.location.hash)[0];
@@ -974,9 +989,8 @@ $.fn.serializeObject = function () {
             if((el.length == 0 && !atTop) || (!elAll.has(currentHashEl) && atBottom)) currentHash = window.location.hash;
             else {
 
-                if(el.length > 0)
-                    hash = "#" + el[0].getAttribute("id");
-
+                if(el.length > 0) hash = "#" + el[0].getAttribute("id");
+               
                 if(e.first || currentHash != hash) {
 
                     if(e.first) hash = currentHash;
@@ -1032,7 +1046,9 @@ $.fn.serializeObject = function () {
 
                     } else if(e.scrollY.delta > 0){
 
-                        var borderThickness = parseInt($(this).css("border-bottom-width")) + parseInt($(this).css("border-top-width"));
+                        var borderThickness = parseInt($(this).css("border-bottom-width")) 
+                                            + parseInt($(this).css("border-top-width"));
+                                            
                         $(this).removeClass("show");
                         $(this).css("top", -this.clientHeight-borderThickness);
                         if(e.scrollY.top == e.scrollY.delta && !e.first)

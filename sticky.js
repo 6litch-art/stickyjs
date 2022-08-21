@@ -1399,8 +1399,7 @@ $.fn.serializeObject = function () {
 
         }.bind(this);
 
-        $(this).off("mousewheel.autoscroll touchmove.autoscroll");
-        $(this).one("mousewheel.autoscroll touchmove.autoscroll", function() {
+        $(this).on("mousewheel.autoscroll touchmove.autoscroll", function() {
 
             $(this).prop("user-scroll", true);
             $(this).stop();
@@ -1408,7 +1407,6 @@ $.fn.serializeObject = function () {
 
         if(!preventMouse) {
 
-            $(this).off("mouseenter.autoscroll touchend.autoscroll");
             $(this).on("mouseenter.autoscroll touchend.autoscroll", function() {
 
                 $(this).prop("user-scroll", true);
@@ -1417,7 +1415,6 @@ $.fn.serializeObject = function () {
             }.bind(this));
 
             if(startOver) {
-                $(this).off("mouseenter.autoscroll touchend.autoscroll");
                 $(this).on("mouseleave.autoscroll touchstart.autoscroll", function() { _onAutoscroll(); }.bind(this));
             }
         }

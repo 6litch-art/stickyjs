@@ -15,7 +15,7 @@
         if (hashElement !== undefined) // Update hash only if element is displayed
             fallback |= window.getComputedStyle(hashElement)["display"] == "none";
 
-        if(skipIfEmptyIdentifier && !newHash && fallback){
+        if((skipIfEmptyIdentifier && !newHash) || fallback){
 
             dispatchEvent(new HashChangeEvent("hashfallback", {oldURL:oldURL, newURL:newURL}));
             newHash = "";

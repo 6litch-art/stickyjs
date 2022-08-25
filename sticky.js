@@ -664,8 +664,8 @@ $.fn.serializeObject = function () {
 
         if(duration == 0) {
 
-            $(el).scrollTop = scrollTop;
-            $(el).scrollLeft = scrollLeft;
+            $(el).scrollTop(scrollTop);
+            $(el).scrollLeft(scrollLeft);
 
             window.dispatchEvent(new Event('scroll'));
             callback();
@@ -951,6 +951,7 @@ $.fn.serializeObject = function () {
         }
 
         var scroller = $(this).closestScrollable();
+        $(scroller).find(".sticky-top").attr("aria-scrollhide", false);
 
         function PayloadReplaceHash() {
 

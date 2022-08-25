@@ -15,7 +15,7 @@
         if (hashElement !== undefined) // Update hash only if element is displayed
             fallback |= window.getComputedStyle(hashElement)["display"] == "none";
 
-        if(skipIfEmptyIdentifier && fallback){
+        if(skipIfEmptyIdentifier && !newHash && fallback){
 
             dispatchEvent(new HashChangeEvent("hashfallback", {oldURL:oldURL, newURL:newURL}));
             newHash = "";
@@ -587,13 +587,13 @@ $.fn.serializeObject = function () {
     Sticky.userScroll = function(el = undefined) { return $(el === undefined ? document.documentElement : el).closestScrollable().prop("user-scroll") ?? true; }
     Sticky.scrollTo = function(dict, callback = function() {}, el = window)
     {
-        var origin = $(el)[0];
         if (el === window  )
             el = document.documentElement;
         if (el === document)
             el = document.documentElement;
 
         var cancelable = dict["cancelable"] ?? false;
+        if(cancelable && $(el).prop("cancel")) $(el).stop();
 
         if(!Sticky.userScroll(el)) {
 
@@ -615,18 +615,17 @@ $.fn.serializeObject = function () {
             });
         }
 
-        var maxScrollX = $(el)[0].scrollWidth  - Math.round($(el).innerWidth());
-        if (maxScrollX == 0) maxScrollX = Math.round($(el).innerWidth());
-        var maxScrollY = $(el)[0].scrollHeight - Math.round($(el).innerHeight());
-        if (maxScrollY == 0) maxScrollY = Math.round($(el).innerHeight());
+        var maxScrollX = $(el).prop("scrollWidth") - Math.round($(el).prop("clientWidth"));
+        if (maxScrollX == 0) maxScrollX = Math.round($(el).prop("clientWidth"));
+        var maxScrollY = $(el).prop("scrollHeight") - Math.round($(el).prop("clientHeight"));
+        if (maxScrollY == 0) maxScrollY = Math.round($(el).prop("clientHeight"));
 
-        scrollTop  = Math.max(0, Math.min(dict["top"] ?? el.scrollTop, maxScrollY));
-        scrollLeft = Math.max(0, Math.min(dict["left"] ?? el.scrollLeft, maxScrollX));
+        scrollTop  = Math.max(0, Math.min(dict["top"] ?? $(el).prop("scrollTop"), maxScrollY));
+        scrollLeft = Math.max(0, Math.min(dict["left"] ?? $(el).prop("scrollLeft"), maxScrollX));
 
         speed    = parseFloat(dict["speed"] ?? 0);
         easing   = dict["easing"] ?? "swing";
         debounce = dict["debounce"] ?? 0;
-        combine  = dict["combine"] ?? true;
 
         duration  = 1000*Transparent.parseDuration(dict["duration"] ?? 0);
         durationX = 1000*Transparent.parseDuration(dict["duration-x"] ?? dict["duration"] ?? 0);
@@ -657,7 +656,7 @@ $.fn.serializeObject = function () {
             if(cancelable)
                 $(el).off("scroll.user mousedown.user wheel.user DOMMouseScroll.user mousewheel.user touchmove.user", () => null);
 
-            origin.dispatchEvent(new Event('scroll'));
+            window.dispatchEvent(new Event('scroll'));
             callback();
 
             $(el).prop("user-scroll", true);
@@ -665,19 +664,15 @@ $.fn.serializeObject = function () {
 
         if(duration == 0) {
 
-            $(el).scrollTop(scrollTop);
-            $(el).scrollLeft(scrollLeft);
+            $(el).scrollTop = scrollTop;
+            $(el).scrollLeft = scrollLeft;
 
-            origin.dispatchEvent(new Event('scroll'));
+            window.dispatchEvent(new Event('scroll'));
             callback();
 
             $(el).prop("user-scroll", true);
 
-        } /*else if (combine) {
-
-            $(el).animate({scrollTop: scrollTop, scrollLeft: scrollLeft}, duration, easing, callbackWrapper);
-
-        }*/ else {
+        } else {
 
             $(el).animate({scrollTop: scrollTop}, durationY, easing,
                 () => $(el).animate({scrollLeft: scrollLeft}, durationX, easing, Transparent.debounce(callbackWrapper, debounce))
@@ -686,7 +681,6 @@ $.fn.serializeObject = function () {
 
         return this;
     }
-
 
     Sticky.scrollToFirstSnap = function (el = window, callback = function() {})
     {
@@ -940,7 +934,6 @@ $.fn.serializeObject = function () {
     Sticky.onScrollDelta = function (e) {
 
         if (Settings.debug) console.log("Sticky delta scrolling.. ", e.scrollY, e.scrollX, e.scrollT, e.screen);
-
         var magnets = Sticky.getMagnets(e.target);
         if(magnets.length) {
 
@@ -958,7 +951,6 @@ $.fn.serializeObject = function () {
         }
 
         var scroller = $(this).closestScrollable();
-        if(!Sticky.userScroll(scroller)) return;
 
         function PayloadReplaceHash() {
 
@@ -966,6 +958,7 @@ $.fn.serializeObject = function () {
 
             var currentHashEl = $(window.location.hash);
             var ids = $(".sticky-headlines[id], .sticky-headlines [id], .sticky-magnet[id]");
+            if (ids.length == 0) return;
 
             var hash = null;
             if(Settings.debug) console.log(show,"Sticky headlines:", $(ids));
@@ -1010,7 +1003,7 @@ $.fn.serializeObject = function () {
 
                     if(Sticky.userScroll(el) || $(el).hasClass("sticky-magnet") || (hash == null && elAll.length == 0)) {
 
-                        window.replaceHash(hash, false);
+                        window.replaceHash(hash, false, false);
                         dispatchEvent(new HashChangeEvent("hashchange"))
                     }
 
@@ -1418,7 +1411,6 @@ $.fn.serializeObject = function () {
                 $(this).on("mouseleave.autoscroll touchstart.autoscroll", function() { _onAutoscroll(); }.bind(this));
             }
         }
-
 
         if(!$(this).data("autoscroll-prevent")) _onAutoscroll();
 

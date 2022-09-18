@@ -186,7 +186,7 @@ $.fn.serializeObject = function () {
         "autoscroll_speed": 100, // pixel/s
         "autoscroll_delay": "5s", // pixel/s
         "autoscroll_easing": "linear",
-        "autoscroll_minwidth": 0,
+        "autoscroll_minwidth": 200,
         "autoscroll_minheight": 400,
         "autoscroll_startover": true,
         "autoscroll_delay_reverse": "30s",

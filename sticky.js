@@ -53,18 +53,30 @@ $.fn.serializeObject = function() {
     return o;
 };
 
-$.fn.isScrollable  = function() { return $(this).isScrollableX() || $(this).isScrollableY(); }
+$.fn.isScrollable  = function() 
+{ 
+    for (let el of $(this).isScrollableX())
+        if(el) return true;
+   
+    for (let el of $(this).isScrollableY())
+        if(el) return true;
+
+    return false;
+}
+
 $.fn.isScrollableX = function() {
 
     return $(this).map(function(i) {
 
         var el = this[i] === window ? document.documentElement : this[i];
+        var isDom = el == document.documentElement;
+
         var hasScrollableContent = el.scrollWidth > el.clientWidth;
 
-        var overflowXStyle = window.getComputedStyle(el).overflowX;
-        var isOverflowHidden = overflowXStyle.indexOf('hidden') !== -1;
-
-        return hasScrollableContent && !isOverflowHidden;
+        var overflowStyle   = window.getComputedStyle(el).overflowX;
+        var isOverflowScroll = overflowStyle.indexOf('scroll') !== -1;
+        
+        return hasScrollableContent && (isOverflowScroll || isDom);
 
     }.bind(this));
 }
@@ -73,13 +85,15 @@ $.fn.isScrollableY = function() {
     return $(this).map(function(i) {
 
         var el = this[i] === window ? document.documentElement : this[i];
+        var isDom = el == document.documentElement;
+
         var hasScrollableContent = el.scrollHeight > el.clientHeight;
 
-        var overflowYStyle = window.getComputedStyle(el).overflowY;
-        var isOverflowHidden = overflowYStyle.indexOf('hidden') !== -1;
+        var overflowStyle   = window.getComputedStyle(el).overflowY;
+        var isOverflowScroll = overflowStyle.indexOf('scroll') !== -1;
 
-        return hasScrollableContent && !isOverflowHidden;
-
+        return hasScrollableContent && (isOverflowScroll || isDom);
+        
     }.bind(this));
 }
 
@@ -1315,7 +1329,7 @@ $.fn.serializeObject = function () {
     }
 
     Sticky.onAutoscroll = function() {
-
+        
         if($(this).data("autoscroll-prevent")) return;
 
         var easing = $(this).data("autoscroll-easing");
@@ -1353,10 +1367,14 @@ $.fn.serializeObject = function () {
 
             var noScrollY = (atTop && atBottom) || scrollHeight < thresholdMinY;
             var noScrollX = (atLeft && atRight) || scrollWidth  < thresholdMinX;
+            
             if ((noScrollY && noScrollX   ) ||
                 (noScrollY && !autoscrollX) ||
                 (noScrollX && !autoscrollY) ||
                 (!autoscrollX && !autoscrollY)) return;
+
+            if (Settings.debug && !$(this).isScrollable()[0])
+                console.error(this, "is not scrollable: autoscroll canceled");
 
             if(reverse && $(this).scrollLeft() == 0 && $(this).scrollTop() == 0)
                 reverse = !reverse;

@@ -111,8 +111,6 @@ html { scroll-behavior: unset !important; }
 	backdrop-filter: blur(5px);
 	-webkit-backdrop-filter: blur(5px);
 	background-color:#FFF5;
-	border: 1px solid #FFF3;
-	box-shadow: 1px 1px 10px #0001;
 }
 
 @keyframes blink {

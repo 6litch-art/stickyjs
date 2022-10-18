@@ -1489,11 +1489,14 @@ $.fn.serializeObject = function () {
                 $(".sticky-swipehint").on("scroll", function()
                 {
                     $(this).removeClass("sticky-swipehint-reveal");
+                    var debounceTime = 1000*Sticky.parseDuration(Sticky.get("swipehint_debounce"));
+                    if(!debounceTime) return;
+
                     $(".sticky-swipehint").on('scroll', Sticky.debounce(function() {
 
                         $(this).addClass("sticky-swipehint-reveal");
 
-                    }, 1000*Sticky.parseDuration(Sticky.get("swipehint_debounce"))));
+                    }, debounceTime));
                 });
 
             }, 1000*Sticky.parseDuration(Sticky.get("swipehint_delay") + 1));

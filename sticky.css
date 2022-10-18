@@ -80,7 +80,7 @@ html { scroll-behavior: unset !important; }
 .sticky-swipehint.sticky-swipehint-reveal .sticky-swipehint-container { display:block; }
 .sticky-swipehint .sticky-swipehint-container {
 
-	position:relative;
+	position:absolute;
 	z-index:1000;
 
 	width: 100%;

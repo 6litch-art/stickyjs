@@ -77,7 +77,7 @@ html { scroll-behavior: unset !important; }
 }
 
 
-.sticky-swipehint.sticky-swipehint-reveal .sticky-swipehint-container { display:block; }
+.sticky-swipehint:not(.sticky-swipehint-reveal) .sticky-swipehint-container { display:none; }
 .sticky-swipehint .sticky-swipehint-container {
 
 	position:absolute;
@@ -87,9 +87,9 @@ html { scroll-behavior: unset !important; }
 	height: 100%;
 }
 
-.sticky-swipehint .sticky-swipehint-container > span img { max-width: 100%; }
 .sticky-swipehint.sticky-swipehint-reveal .sticky-swipehint-container > span { opacity:1; }
-.sticky-swipehint .sticky-swipehint-container > span
+.sticky-swipehint                         .sticky-swipehint-container > span img { max-width: 100%; }
+.sticky-swipehint                         .sticky-swipehint-container > span
 {
 	position:absolute;
 	top: 50%;

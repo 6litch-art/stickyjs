@@ -184,7 +184,7 @@ $.fn.serializeObject = function () {
         "autoscroll": true,
         "autoscroll_bouncing": true,
         "autoscroll_speed": 100, // pixel/s
-        "autoscroll_delay": "5s", // pixel/s
+        "autoscroll_delay": "2s", // pixel/s
         "autoscroll_easing": "linear",
         "autoscroll_minwidth": 0,
         "autoscroll_minheight": 400,
@@ -1475,23 +1475,22 @@ $.fn.serializeObject = function () {
                 var delay = $(this).data("autoscroll-delay");
                 if (delay == undefined) delay = Sticky.get("autoscroll_delay");
 
-                var timeout = undefined;
                 $(this).data("autoscroll-prevent", false);
 
                 var payloadAutoscroll = function() {
 
-                    setTimeout(() => Sticky.onAutoscroll.call(this), 1000*Sticky.parseDuration(delay + 1));
-                    timeout = undefined;
-
+                    setTimeout(() => Sticky.onAutoscroll.call(this), 1000*Sticky.parseDuration(delay) + 1);
+                    
                 }.bind(this);
 
-                if($(this).data("autoscroll-reverse")) {
+                if(!$(this).data("autoscroll-reverse")) payloadAutoscroll();
+                else {
 
                     var scroller = $(this).closestScrollable();
                     var scrollWidth  = $(scroller).prop('scrollWidth') - scroller.innerWidth();
                     var scrollHeight = $(scroller).prop('scrollHeight')- scroller.innerHeight();
 
-                    timeout = setTimeout(() => Sticky.scrollTo({
+                    setTimeout(() => Sticky.scrollTo({
                                 left:scrollWidth,
                                 top:scrollHeight,
                                 duration:reverseDuration,
@@ -1501,19 +1500,21 @@ $.fn.serializeObject = function () {
                         ), 1000*Sticky.parseDuration(reverseDelay + 1)
                     );
 
-                    $(el).one("mousedown.userscroll wheel.userscroll DOMMouseScroll.userscroll mousewheel.userscroll touchmove.userscroll", function() {
+                }
 
-                        if(!startOver) $(this).data("autoscroll-prevent", true);
-                        if(timeout === undefined )
-                            return;
+                $(el).on("mousedown.userscroll wheel.userscroll DOMMouseScroll.userscroll mousewheel.userscroll touchmove.userscroll", function() {
+                    
+                    if(!startOver) {
 
-                        clearTimeout(timeout);
-                        timeout = undefined;
+                        $(this).data("autoscroll-prevent", "true");
+                        $(el).off("mousedown.userscroll wheel.userscroll DOMMouseScroll.userscroll mousewheel.userscroll touchmove.userscroll");
 
-                        payloadAutoscroll();
-                    });
+                        return;
+                    }
+                    
+                    payloadAutoscroll();
 
-                } else payloadAutoscroll();
+                }.bind(this));
             }
         );
 

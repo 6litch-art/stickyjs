@@ -617,7 +617,7 @@ $.fn.serializeObject = function () {
         if (el === document)
             el = document.documentElement;
 
-         var cancelable = dict["cancelable"] ?? false;
+        var cancelable = dict["cancelable"] ?? true;
         if(cancelable && $(el).prop("cancel")) $(el).stop();
 
         if(!Sticky.userScroll(el)) {
@@ -635,8 +635,9 @@ $.fn.serializeObject = function () {
         if(cancelable) {
 
             $(el).prop("cancelable", true);
-            $(el).one("scroll.userscroll mousedown.userscroll wheel.userscroll DOMMouseScroll.userscroll mousewheel.userscroll touchmove.userscroll", function(e) {
+            $(el).on("scroll.userscroll mousedown.userscroll wheel.userscroll DOMMouseScroll.userscroll mousewheel.userscroll touchmove.userscroll", function(e) {
                 $(this).prop("user-scroll", true);
+                $(el).stop();
             });
         }
 

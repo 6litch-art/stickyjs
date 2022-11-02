@@ -1539,7 +1539,23 @@ $.fn.serializeObject = function () {
                     
                 }.bind(this);
 
-                if(!$(this).data("autoscroll-reverse")) payloadAutoscroll();
+                var thresholdMinX = $(this).data("autoscroll-minwidth");
+                if(thresholdMinX == undefined) thresholdMinX = Sticky.get("autoscroll_minwidth");
+                var thresholdMinY = $(this).data("autoscroll-minheight");
+                if(thresholdMinY == undefined) thresholdMinY = Sticky.get("autoscroll_minheight");
+
+                var scrollHeight = $(this).prop('scrollHeight') - $(this).innerHeight();
+                var atTop    = $(this).scrollTop() < 1;
+                var atBottom = Math.abs($(this).scrollTop() - scrollHeight) < 1;
+    
+                var scrollWidth = $(this).prop('scrollWidth') - $(this).innerWidth();
+                var atLeft  = $(this).scrollLeft() < 1;
+                var atRight = Math.abs($(this).scrollLeft() - scrollWidth) < 1;
+    
+                var noScrollY = (atTop && atBottom) || scrollHeight < thresholdMinY;
+                var noScrollX = (atLeft && atRight) || scrollWidth  < thresholdMinX;
+                
+                if(!$(this).data("autoscroll-reverse") || (noScrollY && noScrollX)) payloadAutoscroll();
                 else {
 
                     var scroller = $(this).closestScrollable();

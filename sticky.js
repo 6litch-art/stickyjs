@@ -174,8 +174,7 @@ $.fn.serializeObject = function () {
         //
         // Time control
         "tick"  : "1ms"  ,
-        "throttle": "250ms"  ,
-        "debounce": "1000ms"  ,
+        "debounce": "500ms"  ,
         "threshold": "4000ms",
 
         "scrollcatch": false,
@@ -212,7 +211,7 @@ $.fn.serializeObject = function () {
         "autoscroll_reverse": false,
         "autoscroll_preventmouse": false,
 
-        "smoothscroll_duration": "500ms",
+        "smoothscroll_duration": "250ms",
         "smoothscroll_speed": 0, // pixel/s
         "smoothscroll_easing": "swing",
 
@@ -617,29 +616,8 @@ $.fn.serializeObject = function () {
         if (el === document)
             el = document.documentElement;
 
-        var cancelable = dict["cancelable"] ?? true;
-        if(cancelable && $(el).prop("cancel")) $(el).stop();
-
-        if(!Sticky.userScroll(el)) {
-
-            if($(el).prop("cancelable")) {
-
-                $(el).prop("user-scroll", true);
-                $(el).stop();
-            }
-
-            return;
-        }
-
+        if(Sticky.userScroll(el) == false) return;
         $(el).prop("user-scroll", false);
-        if(cancelable) {
-
-            $(el).prop("cancelable", true);
-            $(el).on("scroll.userscroll mousedown.userscroll wheel.userscroll DOMMouseScroll.userscroll mousewheel.userscroll touchmove.userscroll", function(e) {
-                $(this).prop("user-scroll", true);
-                $(el).stop();
-            });
-        }
 
         var maxScrollX = $(el).prop("scrollWidth") - Math.round($(el).prop("clientWidth"));
         if (maxScrollX == 0) maxScrollX = Math.round($(el).prop("clientWidth"));
@@ -678,9 +656,6 @@ $.fn.serializeObject = function () {
 
         var callbackWrapper = function() {
 
-            if(cancelable)
-                $(el).off("scroll.user mousedown.user wheel.user DOMMouseScroll.user mousewheel.user touchmove.user", () => null);
-
             el.dispatchEvent(new Event('scroll'));
             callback();
 
@@ -690,10 +665,7 @@ $.fn.serializeObject = function () {
         if(duration == 0) {
 
             el.scrollTo(scrollLeft, scrollTop);
-            el.dispatchEvent(new Event('scroll'));
-            callback();
-
-            $(el).prop("user-scroll", true);
+            callbackWrapper();
 
         } else {
 
@@ -957,6 +929,7 @@ $.fn.serializeObject = function () {
     var hasReset = false;
     Sticky.onScrollDelta = function (e) {
 
+        if (Sticky.get("disable")) return;
         if (Settings.debug) console.log("Sticky delta scrolling.. ", e.scrollY, e.scrollX, e.scrollT, e.screen);
         if(!Settings.ready) return;
 
@@ -1355,8 +1328,6 @@ $.fn.serializeObject = function () {
         if (startOver == undefined) startOver = Sticky.get("autoscroll_startover");
         var reverse = $(this).data("autoscroll-reverse");
         if (reverse == undefined) reverse = Sticky.get("autoscroll_reverse");
-        var preventMouse = $(this).data("autoscroll-prevent-mouse");
-        if (preventMouse == undefined) preventMouse = Sticky.get("autoscroll_preventmouse");
 
         var autoscrollX = $(this).data("autoscroll-x");
         if(autoscrollX == undefined) autoscrollX = Sticky.get("autoscroll");
@@ -1410,7 +1381,6 @@ $.fn.serializeObject = function () {
             Sticky.scrollTo(scrollOptions, function() {
 
                 if( !bouncing || $(this).data("autoscroll-prevent") ) return;
-                $(this).prop("user-scroll", true); // Prevent auto scroll to be disabled when going backward
 
                 Sticky.scrollTo(scrollBackOptions, function() {
 
@@ -1422,31 +1392,11 @@ $.fn.serializeObject = function () {
 
             }.bind(this), this);
 
+            return this;
+
         }.bind(this);
 
-        $(this).on("mousewheel.autoscroll touchmove.autoscroll", function() {
-
-            $(this).prop("user-scroll", true);
-            $(this).stop();
-        });
-
-        if(!preventMouse) {
-
-            $(this).on("mouseenter.autoscroll touchend.autoscroll", function() {
-
-                $(this).prop("user-scroll", true);
-                $(this).stop();
-
-            }.bind(this));
-
-            if(startOver) {
-                $(this).on("mouseleave.autoscroll touchstart.autoscroll", function() { _onAutoscroll(); }.bind(this));
-            }
-        }
-
-        if(!$(this).data("autoscroll-prevent")) _onAutoscroll();
-
-        return this;
+        return _onAutoscroll();
     }
 
     Sticky.onLoad = function (el = window)
@@ -1532,14 +1482,6 @@ $.fn.serializeObject = function () {
                 var delay = $(this).data("autoscroll-delay");
                 if (delay == undefined) delay = Sticky.get("autoscroll_delay");
 
-                $(this).data("autoscroll-prevent", false);
-
-                var payloadAutoscroll = function() {
-
-                    setTimeout(() => Sticky.onAutoscroll.call(this), 1000*Sticky.parseDuration(delay) + 1);
-                    
-                }.bind(this);
-
                 var thresholdMinX = $(this).data("autoscroll-minwidth");
                 if(thresholdMinX == undefined) thresholdMinX = Sticky.get("autoscroll_minwidth");
                 var thresholdMinY = $(this).data("autoscroll-minheight");
@@ -1548,46 +1490,80 @@ $.fn.serializeObject = function () {
                 var scrollHeight = $(this).prop('scrollHeight') - $(this).innerHeight();
                 var atTop    = $(this).scrollTop() < 1;
                 var atBottom = Math.abs($(this).scrollTop() - scrollHeight) < 1;
-    
+
                 var scrollWidth = $(this).prop('scrollWidth') - $(this).innerWidth();
                 var atLeft  = $(this).scrollLeft() < 1;
                 var atRight = Math.abs($(this).scrollLeft() - scrollWidth) < 1;
-    
+
+                var preventMouse = $(this).data("autoscroll-prevent-mouse");
+                if (preventMouse == undefined) preventMouse = Sticky.get("autoscroll_preventmouse");
+
                 var noScrollY = (atTop && atBottom) || scrollHeight < thresholdMinY;
                 var noScrollX = (atLeft && atRight) || scrollWidth  < thresholdMinX;
-                
-                if(!$(this).data("autoscroll-reverse") || (noScrollY && noScrollX)) payloadAutoscroll();
+
+                $(this).data("autoscroll-prevent", false);
+
+                var autoscrollTimeout = undefined;
+                var payloadAutoscroll = function() {
+
+                    $(this).off("scroll.autoscroll");
+                    if(autoscrollTimeout != undefined) clearTimeout(autoscrollTimeout);
+
+                    autoscrollTimeout = setTimeout(() => Sticky.onAutoscroll.call(this), 1000*Sticky.parseDuration(delay) + 1);
+                }.bind(this);
+
+                //
+                // Mouse events
+                if (preventMouse) return this;
                 else {
 
-                    var scroller = $(this).closestScrollable();
-                    var scrollWidth  = $(scroller).prop('scrollWidth') - scroller.innerWidth();
-                    var scrollHeight = $(scroller).prop('scrollHeight')- scroller.innerHeight();
+                    $(this).on("mouseenter.autoscroll touchstart.autoscroll", function() {
 
-                    setTimeout(() => Sticky.scrollTo({
-                                left:scrollWidth,
-                                top:scrollHeight,
-                                duration:reverseDuration,
-                                speed:reverseSpeed
-                            },
-                            payloadAutoscroll, scroller
-                        ), 1000*Sticky.parseDuration(reverseDelay + 1)
-                    );
+                        if(autoscrollTimeout != undefined) clearTimeout(autoscrollTimeout);
+                        $(this).prop("user-scroll", true);
+                        $(this).stop();
 
+                    }.bind(this));
+
+                    $(this).on("mouseleave.autoscroll touchend.autoscroll", function() {
+
+                        if(startOver) payloadAutoscroll();
+                        else {
+
+                            $(this).data("autoscroll-prevent", "true");
+                            $(this).off("mouseleave.autoscroll touchend.autoscroll");
+                        }
+
+                    }.bind(this));
                 }
 
-                $(el).on("mousedown.userscroll wheel.userscroll DOMMouseScroll.userscroll mousewheel.userscroll touchmove.userscroll", function() {
-                    
-                    if(!startOver) {
+                //
+                // Call action
+                if($(this).data("autoscroll-reverse")) {
 
-                        $(this).data("autoscroll-prevent", "true");
-                        $(el).off("mousedown.userscroll wheel.userscroll DOMMouseScroll.userscroll mousewheel.userscroll touchmove.userscroll");
+                    var scroller = $(this).closestScrollable();
+                    var scrollWidth  = $(scroller).prop('scrollWidth')  - scroller.innerWidth();
+                    var scrollHeight = $(scroller).prop('scrollHeight') - scroller.innerHeight();
 
-                        return;
-                    }
-                    
+                    $(this).one("scroll.autoscroll", function() {
+
+                        $(el).prop("user-scroll", true);
+                        $(this).stop();
+
+                        payloadAutoscroll();
+                    });
+
+                    setTimeout(() => Sticky.scrollTo({
+                            left:scrollWidth,
+                            top:scrollHeight,
+                            duration:reverseDuration,
+                            speed:reverseSpeed
+                    }, payloadAutoscroll, scroller), 1000*Sticky.parseDuration(reverseDelay + 1));
+
+                } else if(noScrollY && noScrollX) {
+
                     payloadAutoscroll();
-
-                }.bind(this));
+                }
             }
         );
 

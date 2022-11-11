@@ -207,7 +207,7 @@ $.fn.serializeObject = function () {
         "autoscroll_minwidth": 200,
         "autoscroll_minheight": 400,
         "autoscroll_startover": true,
-        "autoscroll_delay_reverse": "30s",
+        "autoscroll_delay_reverse": "3s",
         "autoscroll_reverse": false,
         "autoscroll_preventmouse": false,
 
@@ -1382,6 +1382,7 @@ $.fn.serializeObject = function () {
 
                 if( !bouncing || $(this).data("autoscroll-prevent") ) return;
 
+                $(this).prop("user-scroll", true);
                 Sticky.scrollTo(scrollBackOptions, function() {
 
                     Sticky.onAutoscroll.call(this);
@@ -1506,10 +1507,11 @@ $.fn.serializeObject = function () {
                 var autoscrollTimeout = undefined;
                 var payloadAutoscroll = function() {
 
-                    $(this).off("scroll.autoscroll");
                     if(autoscrollTimeout != undefined) clearTimeout(autoscrollTimeout);
+                    $(this).off("scroll.autoscroll");
 
                     autoscrollTimeout = setTimeout(() => Sticky.onAutoscroll.call(this), 1000*Sticky.parseDuration(delay) + 1);
+
                 }.bind(this);
 
                 //
@@ -1539,7 +1541,8 @@ $.fn.serializeObject = function () {
 
                 //
                 // Call action
-                if($(this).data("autoscroll-reverse")) {
+                if(noScrollY && noScrollX) payloadAutoscroll();
+                else if($(this).data("autoscroll-reverse")) {
 
                     var scroller = $(this).closestScrollable();
                     var scrollWidth  = $(scroller).prop('scrollWidth')  - scroller.innerWidth();
@@ -1547,12 +1550,13 @@ $.fn.serializeObject = function () {
 
                     $(this).one("scroll.autoscroll", function() {
 
-                        $(el).prop("user-scroll", true);
+                        $(this).prop("user-scroll", true);
                         $(this).stop();
 
                         payloadAutoscroll();
                     });
 
+                    if (Settings.debug) console.log("Autoscroll reverse delay applied is \"" + reverseDelay + "\".");
                     setTimeout(() => Sticky.scrollTo({
                             left:scrollWidth,
                             top:scrollHeight,
@@ -1560,10 +1564,7 @@ $.fn.serializeObject = function () {
                             speed:reverseSpeed
                     }, payloadAutoscroll, scroller), 1000*Sticky.parseDuration(reverseDelay + 1));
 
-                } else if(noScrollY && noScrollX) {
-
-                    payloadAutoscroll();
-                }
+                } else payloadAutoscroll();
             }
         );
 
@@ -1583,7 +1584,7 @@ $.fn.serializeObject = function () {
         $('a[href^="#"]').off();
     });
 
-    $(window).on("load", function() {
+    $(window).on("DOMContentLoaded", function() {
 
         Sticky.onLoad();
         $(window).trigger("scroll.sticky");

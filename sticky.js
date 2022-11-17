@@ -1583,8 +1583,7 @@ $.fn.serializeObject = function () {
                     var scrollWidth  = $(scroller).prop('scrollWidth')  - scroller.innerWidth();
                     var scrollHeight = $(scroller).prop('scrollHeight') - scroller.innerHeight();
 
-                    var scrollerWindow = $(scroller).closestScrollableWindow();
-                    $(scroller).on("scroll.autoscroll wheel.autoscroll DOMMouseScroll.autoscroll mousewheel.autoscroll touchstart.autoscroll", function(e) {
+                    $(scroller).on("wheel.autoscroll DOMMouseScroll.autoscroll mousewheel.autoscroll touchstart.autoscroll", function(e) {
 
                         $(this).prop("user-scroll", true);
                         $(this).stop();

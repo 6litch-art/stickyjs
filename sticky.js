@@ -121,7 +121,7 @@ $.fn.closestScrollable = function()
 $.fn.closestScrollableWindow = function()
 {
     return $(this).closestScrollable().map(function(i) {
-        
+
         if (this === document.documentElement)
             return window;
         if (this === document)
@@ -543,7 +543,7 @@ $.fn.serializeObject = function () {
             dT.top    == 0 && dT.left  == 0 &&
             dT.bottom == 0 && dT.right == 0
         ) * (event.last + 1);
-        
+
         event.reset = event.last < 1;
         event.scrollT = {
             "delta"   : dT,
@@ -1574,7 +1574,7 @@ $.fn.serializeObject = function () {
                     var scrollerWindow = $(scroller).closestScrollableWindow();
                     $(scrollerWindow).on("scroll.autoscroll", function(e) {
 
-                        if( e.reset || e.reset == undefined ) {
+                        if( e.reset ) {
 
                             $(scroller).prop("user-scroll", true);
                             $(scroller).stop();

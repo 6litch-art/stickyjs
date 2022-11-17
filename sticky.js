@@ -1561,6 +1561,18 @@ $.fn.serializeObject = function () {
                             $(scroller).off("mouseleave.autoscroll touchend.autoscroll");
                         }
                     });
+
+                    $(scroller).on("onbeforeunload.autoscroll", function() {
+
+                        $(this).off("mousewheel.autoscroll touchstart.autoscroll");
+                        $(this).off("mouseenter.autoscroll touchstart.autoscroll");
+                        $(this).off("mouseleave.autoscroll touchend.autoscroll");
+                        $(this).off("scroll.autoscroll");
+                        $(this).off("onbeforeunload.autoscroll");
+
+                        var scrollerWindow = $(this).closestScrollableWindow();
+                        $(scrollerWindow).off("scroll.autoscroll");
+                    });
                 }
 
                 //
@@ -1572,13 +1584,10 @@ $.fn.serializeObject = function () {
                     var scrollHeight = $(scroller).prop('scrollHeight') - scroller.innerHeight();
 
                     var scrollerWindow = $(scroller).closestScrollableWindow();
-                    $(scrollerWindow).on("scroll.autoscroll", function(e) {
+                    $(scroller).on("scroll.autoscroll wheel.autoscroll DOMMouseScroll.autoscroll mousewheel.autoscroll touchstart.autoscroll", function(e) {
 
-                        if( e.reset ) {
-
-                            $(scroller).prop("user-scroll", true);
-                            $(scroller).stop();
-                        }
+                        $(this).prop("user-scroll", true);
+                        $(this).stop();
                     });
 
                     if (Settings.debug) console.log("Autoscroll reverse delay applied is \"" + reverseDelay + "\".");

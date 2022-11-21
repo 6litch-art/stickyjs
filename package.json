@@ -1,0 +1,16 @@
+{
+  "name": "@glitchr/stickyjs",
+  "version": "1.0.0",
+  "description": "Sticky scroll library",
+  "main": "index.js",
+  "access": "public",
+  "repository": {
+    "url": "ssh://git@gitlab.glitchr.dev:public-repository/javascript/stickyjs.git",
+    "type": "git"
+  },
+  "author": "Marco Meyer <marco.meyer@glitchr.io>",
+  "license": "LGPL-3.0-or-later",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

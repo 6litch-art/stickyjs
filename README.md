@@ -1,2 +1,1 @@
-# StickyJS
-
+# Sticky JS library

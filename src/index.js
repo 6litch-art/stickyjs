@@ -182,7 +182,7 @@ $.fn.serializeObject = function () {
 
 })(this, function () {
 
-    var Sticky = {};
+    var Sticky = window.Sticky = {};
     Sticky.version = '0.1.0';
 
     var Settings = Sticky.settings = {

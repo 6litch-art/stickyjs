@@ -945,6 +945,7 @@ $.fn.serializeObject = function () {
             });
     }
 
+    var first = true;
     var hasReset = false;
     Sticky.onScrollDelta = function (e) {
 
@@ -1020,6 +1021,11 @@ $.fn.serializeObject = function () {
                     }
 
                     if(Sticky.userScroll(el) || $(el).hasClass("sticky-magnet") || (hash == null && elAll.length == 0)) {
+
+                        if(first) {
+                            first = false;
+                            return;
+                        }
 
                         window.replaceHash(hash, false, false);
                         dispatchEvent(new HashChangeEvent("hashchange"))

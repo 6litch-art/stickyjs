@@ -196,7 +196,7 @@ $.fn.serializeObject = function () {
         "scrollcatch": false,
         "scrolllock" : true,
         "scrollhide" : true,
-        "scrollhint" : 0.5,
+        "scrollhint" : 0.25,
 
         //
         // Manual overscroll detection (browser compatibility, e.g. scroll event missing with Firefox)
@@ -281,7 +281,7 @@ $.fn.serializeObject = function () {
     Sticky.getScrollPadding = function(el = document.documentElement) {
 
         var scroller = $(el).closestScrollable()[0];
-        var style  = window.getComputedStyle(scroller);
+        var style    = scroller instanceof Element ? window.getComputedStyle(scroller) : {};
 
         var dict = {};
             dict["top"   ] = Sticky.parseToPixel(style["scroll-padding-top"   ] || 0, scroller);
@@ -407,12 +407,13 @@ $.fn.serializeObject = function () {
 
         event.target = $(event.target);
         event.target = $(event.target).isScrollable() ? event.target : $(event.target).closestScrollable();
+
         if(event.target.length == 0) return event;
 
         if ($(event.target).prop("user-scroll") === undefined)
             $(event.target).prop("user-scroll", true);
 
-        var targetData = jQuery.data(event.target);
+        var targetData = jQuery.data(event.target[0]);
         var first  = (Object.keys(targetData).length === 0);
 
         var top    = targetData.top    || 0;
@@ -1132,7 +1133,7 @@ $.fn.serializeObject = function () {
             if(e.reset) hasReset = true;
             if(scrollHint) {
 
-                if(e.scrollY.delta < 0) {
+                if(!e.scrollY.bottomElastic) {
                     $(this).removeClass("hint");
                     $(this).off("click.hint");
                     hasReset = false;

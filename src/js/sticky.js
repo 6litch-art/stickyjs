@@ -1552,6 +1552,7 @@ $.fn.serializeObject = function () {
                 // Mouse events
                 if (mouseAction) {
 
+                    $(scroller).off("mouseenter.autoscroll touchstart.autoscroll");
                     $(scroller).on("mouseenter.autoscroll touchstart.autoscroll", function() {
 
                         if(autoscrollTimeout != undefined) clearTimeout(autoscrollTimeout);
@@ -1559,6 +1560,7 @@ $.fn.serializeObject = function () {
                         $(scroller).stop();
                     });
 
+                    $(scroller).on("mouseleave.autoscroll touchend.autoscroll");
                     $(scroller).on("mouseleave.autoscroll touchend.autoscroll", function() {
 
                         if(startOver) payloadAutoscroll();
@@ -1569,6 +1571,7 @@ $.fn.serializeObject = function () {
                         }
                     });
 
+                    $(scroller).on("onbeforeunload.autoscroll");
                     $(scroller).on("onbeforeunload.autoscroll", function() {
 
                         $(this).off("mousewheel.autoscroll touchstart.autoscroll");
@@ -1590,6 +1593,7 @@ $.fn.serializeObject = function () {
                     var scrollWidth  = $(scroller).prop('scrollWidth')  - scroller.innerWidth();
                     var scrollHeight = $(scroller).prop('scrollHeight') - scroller.innerHeight();
 
+                    $(scroller).off("wheel.autoscroll DOMMouseScroll.autoscroll mousewheel.autoscroll touchstart.autoscroll");
                     $(scroller).on("wheel.autoscroll DOMMouseScroll.autoscroll mousewheel.autoscroll touchstart.autoscroll", function(e) {
 
                         $(this).prop("user-scroll", true);

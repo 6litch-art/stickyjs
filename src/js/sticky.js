@@ -1344,7 +1344,7 @@ $.fn.serializeObject = function () {
     Sticky.onAutoscroll = function() {
 
         var container = this;
-        var scroller = $(container).closestScrollable();
+        var scroller = $(container); //.closestScrollable();
 
         function parseBoolean(str) {
             return /true/i.test(str);
@@ -1517,7 +1517,7 @@ $.fn.serializeObject = function () {
             $(".sticky-autoscroll").each(function() {
 
                 var container = this;
-                var scroller = $(container).closestScrollable();
+                var scroller = $(container); //.closestScrollable();
 
                 var reverseDelay = $(scroller).data("autoscroll-delay-reverse");
                 if (reverseDelay == undefined) reverseDelay = Sticky.get("autoscroll_delay_reverse");

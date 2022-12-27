@@ -1340,7 +1340,15 @@ $.fn.serializeObject = function () {
         return this;
     }
 
+
     Sticky.onAutoscroll = function() {
+
+        var container = this;
+        var scroller = $(container).closestScrollable();
+
+        function parseBoolean(str) {
+            return /true/i.test(str);
+        }
 
         if ($(this).data("autoscroll-prevent")) {
 
@@ -1366,8 +1374,11 @@ $.fn.serializeObject = function () {
 
         var autoscrollX = $(this).data("autoscroll-x");
         if(autoscrollX == undefined) autoscrollX = Sticky.get("autoscroll");
+        autoscrollX = parseBoolean(autoscrollX);
+
         var autoscrollY = $(this).data("autoscroll-y");
         if(autoscrollY == undefined) autoscrollY = Sticky.get("autoscroll");
+        autoscrollY = parseBoolean(autoscrollY);
 
         var thresholdMinX = $(this).data("autoscroll-minwidth");
         if(thresholdMinX == undefined) thresholdMinX = Sticky.get("autoscroll_minwidth");
@@ -1415,18 +1426,18 @@ $.fn.serializeObject = function () {
 
             Sticky.scrollTo(scrollOptions, function() {
 
-                if( !bouncing || $(this).data("autoscroll-prevent") ) return;
+                if( !bouncing || $(container).data("autoscroll-prevent") ) return;
 
-                $(this).prop("user-scroll", true);
+                $(scroller).prop("user-scroll", true);
                 Sticky.scrollTo(scrollBackOptions, function() {
 
-                    Sticky.onAutoscroll.call(this);
-                    if(reverse) $(this).removeData("autoscroll-reverse");
-                    else $(this).data("autoscroll-reverse", true);
+                    Sticky.onAutoscroll.call(container);
+                    if(reverse) $(container).removeData("autoscroll-reverse");
+                    else $(container).data("autoscroll-reverse", true);
 
-                }.bind(this), this)
+                }.bind(this), scroller)
 
-            }.bind(this), this);
+            }.bind(this), scroller);
 
             return this;
 
@@ -1505,7 +1516,8 @@ $.fn.serializeObject = function () {
 
             $(".sticky-autoscroll").each(function() {
 
-                var scroller = $(this).closestScrollable();
+                var container = this;
+                var scroller = $(container).closestScrollable();
 
                 var reverseDelay = $(scroller).data("autoscroll-delay-reverse");
                 if (reverseDelay == undefined) reverseDelay = Sticky.get("autoscroll_delay_reverse");
@@ -1545,7 +1557,7 @@ $.fn.serializeObject = function () {
                 var payloadAutoscroll = function() {
 
                     if(autoscrollTimeout != undefined) clearTimeout(autoscrollTimeout);
-                    autoscrollTimeout = setTimeout(() => Sticky.onAutoscroll.call(scroller), 1000*Sticky.parseDuration(delay) + 1);
+                    autoscrollTimeout = setTimeout(() => Sticky.onAutoscroll.call(container), 1000*Sticky.parseDuration(delay) + 1);
                 };
 
                 //

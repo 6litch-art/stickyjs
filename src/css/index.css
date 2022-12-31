@@ -106,20 +106,20 @@ html { scroll-behavior: unset !important; }
 	padding:1em;
 
 	object-fit:cover;
-	animation:blink normal 4s infinite ease-in-out;
+	animation:swiphint normal 4s infinite ease-in-out;
 
 	backdrop-filter: blur(5px);
 	-webkit-backdrop-filter: blur(5px);
 	background-color:#FFF5;
 }
 
-@keyframes blink {
+@keyframes swiphint {
     0%   { opacity: 0; }
     25%  { opacity: 1; }
     50%  { opacity: 1; }
     100% { opacity: 0; }
 }
-@-webkit-keyframes blink {
+@-webkit-keyframes swiphint {
     0%   { opacity: 0; }
     25%  { opacity: 1; }
     50%  { opacity: 1; }

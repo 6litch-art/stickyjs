@@ -196,7 +196,7 @@ $.fn.serializeObject = function () {
         "scrollcatch": false,
         "scrolllock" : true,
         "scrollhide" : true,
-        "scrollhint" : 0.25,
+        "scrollhint" : 0.5,
 
         //
         // Manual overscroll detection (browser compatibility, e.g. scroll event missing with Firefox)
@@ -281,7 +281,7 @@ $.fn.serializeObject = function () {
     Sticky.getScrollPadding = function(el = document.documentElement) {
 
         var scroller = $(el).closestScrollable()[0];
-        var style    = scroller instanceof Element ? window.getComputedStyle(scroller) : {};
+        var style  = window.getComputedStyle(scroller);
 
         var dict = {};
             dict["top"   ] = Sticky.parseToPixel(style["scroll-padding-top"   ] || 0, scroller);
@@ -407,13 +407,12 @@ $.fn.serializeObject = function () {
 
         event.target = $(event.target);
         event.target = $(event.target).isScrollable() ? event.target : $(event.target).closestScrollable();
-
         if(event.target.length == 0) return event;
 
         if ($(event.target).prop("user-scroll") === undefined)
             $(event.target).prop("user-scroll", true);
 
-        var targetData = jQuery.data(event.target[0]);
+        var targetData = jQuery.data(event.target);
         var first  = (Object.keys(targetData).length === 0);
 
         var top    = targetData.top    || 0;
@@ -946,7 +945,6 @@ $.fn.serializeObject = function () {
             });
     }
 
-    var first = true;
     var hasReset = false;
     Sticky.onScrollDelta = function (e) {
 
@@ -1022,11 +1020,6 @@ $.fn.serializeObject = function () {
                     }
 
                     if(Sticky.userScroll(el) || $(el).hasClass("sticky-magnet") || (hash == null && elAll.length == 0)) {
-
-                        if(first) {
-                            first = false;
-                            return;
-                        }
 
                         window.replaceHash(hash, false, false);
                         dispatchEvent(new HashChangeEvent("hashchange"))
@@ -1133,7 +1126,7 @@ $.fn.serializeObject = function () {
             if(e.reset) hasReset = true;
             if(scrollHint) {
 
-                if(!e.scrollY.bottomElastic) {
+                if(e.scrollY.delta < 0) {
                     $(this).removeClass("hint");
                     $(this).off("click.hint");
                     hasReset = false;
@@ -1340,15 +1333,7 @@ $.fn.serializeObject = function () {
         return this;
     }
 
-
     Sticky.onAutoscroll = function() {
-
-        var container = this;
-        var scroller = $(container); //.closestScrollable();
-
-        function parseBoolean(str) {
-            return /true/i.test(str);
-        }
 
         if ($(this).data("autoscroll-prevent")) {
 
@@ -1374,11 +1359,8 @@ $.fn.serializeObject = function () {
 
         var autoscrollX = $(this).data("autoscroll-x");
         if(autoscrollX == undefined) autoscrollX = Sticky.get("autoscroll");
-        autoscrollX = parseBoolean(autoscrollX);
-
         var autoscrollY = $(this).data("autoscroll-y");
         if(autoscrollY == undefined) autoscrollY = Sticky.get("autoscroll");
-        autoscrollY = parseBoolean(autoscrollY);
 
         var thresholdMinX = $(this).data("autoscroll-minwidth");
         if(thresholdMinX == undefined) thresholdMinX = Sticky.get("autoscroll_minwidth");
@@ -1426,18 +1408,18 @@ $.fn.serializeObject = function () {
 
             Sticky.scrollTo(scrollOptions, function() {
 
-                if( !bouncing || $(container).data("autoscroll-prevent") ) return;
+                if( !bouncing || $(this).data("autoscroll-prevent") ) return;
 
-                $(scroller).prop("user-scroll", true);
+                $(this).prop("user-scroll", true);
                 Sticky.scrollTo(scrollBackOptions, function() {
 
-                    Sticky.onAutoscroll.call(container);
-                    if(reverse) $(container).removeData("autoscroll-reverse");
-                    else $(container).data("autoscroll-reverse", true);
+                    Sticky.onAutoscroll.call(this);
+                    if(reverse) $(this).removeData("autoscroll-reverse");
+                    else $(this).data("autoscroll-reverse", true);
 
-                }.bind(this), scroller)
+                }.bind(this), this)
 
-            }.bind(this), scroller);
+            }.bind(this), this);
 
             return this;
 
@@ -1516,8 +1498,7 @@ $.fn.serializeObject = function () {
 
             $(".sticky-autoscroll").each(function() {
 
-                var container = this;
-                var scroller = $(container); //.closestScrollable();
+                var scroller = $(this).closestScrollable();
 
                 var reverseDelay = $(scroller).data("autoscroll-delay-reverse");
                 if (reverseDelay == undefined) reverseDelay = Sticky.get("autoscroll_delay_reverse");
@@ -1557,14 +1538,13 @@ $.fn.serializeObject = function () {
                 var payloadAutoscroll = function() {
 
                     if(autoscrollTimeout != undefined) clearTimeout(autoscrollTimeout);
-                    autoscrollTimeout = setTimeout(() => Sticky.onAutoscroll.call(container), 1000*Sticky.parseDuration(delay) + 1);
+                    autoscrollTimeout = setTimeout(() => Sticky.onAutoscroll.call(scroller), 1000*Sticky.parseDuration(delay) + 1);
                 };
 
                 //
                 // Mouse events
                 if (mouseAction) {
 
-                    $(scroller).off("mouseenter.autoscroll touchstart.autoscroll");
                     $(scroller).on("mouseenter.autoscroll touchstart.autoscroll", function() {
 
                         if(autoscrollTimeout != undefined) clearTimeout(autoscrollTimeout);
@@ -1572,7 +1552,6 @@ $.fn.serializeObject = function () {
                         $(scroller).stop();
                     });
 
-                    $(scroller).on("mouseleave.autoscroll touchend.autoscroll");
                     $(scroller).on("mouseleave.autoscroll touchend.autoscroll", function() {
 
                         if(startOver) payloadAutoscroll();
@@ -1583,7 +1562,6 @@ $.fn.serializeObject = function () {
                         }
                     });
 
-                    $(scroller).on("onbeforeunload.autoscroll");
                     $(scroller).on("onbeforeunload.autoscroll", function() {
 
                         $(this).off("mousewheel.autoscroll touchstart.autoscroll");
@@ -1605,7 +1583,6 @@ $.fn.serializeObject = function () {
                     var scrollWidth  = $(scroller).prop('scrollWidth')  - scroller.innerWidth();
                     var scrollHeight = $(scroller).prop('scrollHeight') - scroller.innerHeight();
 
-                    $(scroller).off("wheel.autoscroll DOMMouseScroll.autoscroll mousewheel.autoscroll touchstart.autoscroll");
                     $(scroller).on("wheel.autoscroll DOMMouseScroll.autoscroll mousewheel.autoscroll touchstart.autoscroll", function(e) {
 
                         $(this).prop("user-scroll", true);

@@ -191,7 +191,7 @@ $.fn.serializeObject = function () {
         // Time control
         "tick"  : "1ms"  ,
         "debounce": "500ms"  ,
-        "threshold": "4000ms",
+        "threshold": "5000ms",
 
         "scrollcatch": false,
         "scrolllock" : true,

@@ -213,6 +213,10 @@ $.fn.serializeObject = function () {
         "scrollsnap_start"     : "start", //start, center, end
         "scrollsnap_proximity" : 0.01   ,
 
+        "swipe"                : true,
+        "swipe_timegate"       : "1s",
+        "swipe_threshold"      : 200,
+
         "swipehint"            : true,
         "swipehint_delay"      : "1s",
         "swipehint_debounce"   : 0,
@@ -871,6 +875,56 @@ $.fn.serializeObject = function () {
         var current = Sticky.closestTo(el.scrollTop || el.scrollY, magnets.map(function() { return this.offsetTop; }));
         return current < magnets.length-1 ? magnets[current+1] : magnets[current];
     }
+
+
+    Sticky.onSwipe = function (el = window) {
+
+        var t0 = 0, x0 = 0, y0 = 0;
+
+        function handleSwipe(that, swipeDirection) {
+
+            if (swipeDirection > 0) {
+
+                if(debug) console.log("Swipe right in ", that)
+                that.dispatchEvent("sticky.swipe_right");
+
+            } else if (swipeDirection < 0) {
+
+                if(debug) console.log("Swipe left in ", that);
+                that.dispatchEvent("sticky.swipe_left");
+            }
+        };
+
+        window.addEventListener('touchstart', function (e) {
+
+            var touchobj = e.changedTouches[0]
+
+            t0 = new Date().getTime() // record time when finger first makes contact with surface
+            x0 = touchobj.pageX;
+            y0 = touchobj.pageY;
+
+        }, false);
+
+        window.addEventListener('touchend', function (e) {
+
+            var touchobj = e.changedTouches[0]
+            var dX = touchobj.pageX - x0 // get total dist traveled by finger while in contact with surface
+            var dT = new Date().getTime() - t0 // get time elapsed
+
+            var trigger = (dT <= parseInt(Sticky.get("swipe_timegate")) && Math.abs(touchobj.pageY - y0) <= 100);
+
+            var swipeDirection = 0;
+            if(trigger) swipeDirection = Math.abs(dX) >= parseInt(Sticky.get("swipe_threshold")) ? (dX > 0 ? 1 : -1) : 0;
+
+            $(el).each(function() {
+
+                if(this === e.target || this.contains(e.target))
+                    handleSwipe(this, swipeDirection);
+            });
+
+        }, false);
+    }
+
 
     var trigger = {};
     Sticky.onScrollPercent = function(e)
@@ -1555,6 +1609,9 @@ $.fn.serializeObject = function () {
             anchorY = anchorElem.length ? anchorElem[0].offsetTop - Sticky.getScrollPadding().top : 0;
         });
 
+        if(Sticky.get("swipe"))
+            Sticky.onSwipe($(".sticky-swipe"));
+
         if(Sticky.get("swipehint"))
         {
             $(".sticky-swipehint-container").each(function() {
@@ -1563,7 +1620,7 @@ $.fn.serializeObject = function () {
                 image.src = $(this).data("image");
 
                 var span = document.createElement("span");
-                span.append(image);
+                    span.append(image);
 
                 $(this).append(span);
             });

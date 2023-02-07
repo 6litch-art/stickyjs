@@ -931,7 +931,7 @@ $.fn.serializeObject = function () {
     {
         if(e.target == undefined) return;
 
-        var classList = e.target[0].classList || "";
+        var classList = e.target.length ? e.target[0].classList : [];
             classList.forEach(function(className) {
 
                 if(!(e.target[0] in trigger)) trigger[e.target[0]] = {};

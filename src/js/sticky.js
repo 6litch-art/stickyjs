@@ -936,7 +936,7 @@ $.fn.serializeObject = function () {
 
                 if(!(e.target[0] in trigger)) trigger[e.target[0]] = {};
 
-                var regex = /scrollpercent(?:-(from|every|once)){0,1}-(\d+)(udlr){0,1}/gi;
+                var regex = /sticky-scrollpercent(?:-(from|every|once)){0,1}-(\d+)(udlr){0,1}/gi;
                 if( (match = regex.exec(className)) ) {
 
                     var scrollTrigger = match[1] || "every";
@@ -950,7 +950,7 @@ $.fn.serializeObject = function () {
                     var scrollPercent = parseInt(match[2]);
                     if(scrollDir == "up" || scrollDir == "left") scrollPercent = 100-scrollPercent;
 
-                    if(e.scrollX.direction !== undefined && e.scrollX.delta) {
+                    if((e.scrollX.direction !== undefined && e.scrollX.delta) || scrollPercent == 100) {
 
                         if(!(className in trigger[e.target[0]])) trigger[e.target[0]][className] = true;
                         if(scrollTrigger == "from" && e.scrollX.percent >= scrollPercent)
@@ -966,14 +966,13 @@ $.fn.serializeObject = function () {
                         trigger[e.target[0]][className] = (scrollTrigger == "every" && e.scrollX.percent <  scrollPercent);
                     }
 
-                    if(e.scrollY.direction !== undefined && e.scrollY.delta) {
+                    if((e.scrollY.direction !== undefined && e.scrollY.delta) || scrollPercent == 100) {
 
                         if(!className in trigger[e.target[0]]) trigger[e.target[0]][className] = true;
                         if(scrollTrigger == "from" && e.scrollY.percent >= scrollPercent)
                             e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:0, dir:scrollDir, percent:scrollPercent}}));
                         if(scrollTrigger == "once" && e.scrollY.percent >= scrollPercent && trigger[e.target[0]][className])
                             e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:1, dir:scrollDir, percent:scrollPercent}}));
-
                         if(scrollTrigger == "every" && e.scrollY.percent >= scrollPercent && trigger[e.target[0]][className])
                             e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:2, dir:scrollDir, percent:scrollPercent}}));
 

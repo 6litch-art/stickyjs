@@ -804,6 +804,7 @@ $.fn.serializeObject = function () {
 
     Sticky.enableScroll = function(el = window) {
 
+        console.log(el);
         // left: 37, up: 38, right: 39, down: 40,
         // spacebar: 32, pageup: 33, pagedown: 34, end: 35, home: 36
         var keys = {37: 1, 38: 1, 39: 1, 40: 1};
@@ -824,10 +825,9 @@ $.fn.serializeObject = function () {
             }));
         } catch(e) {}
 
-        var wheelOpt = supportsPassive ? { passive: false } : false;
+        var wheelOpt = supportsPassive ? { passive: true } : false;
         var wheelEvent = 'onwheel' in document.createElement('div') ? 'wheel.preventDefault' : 'mousewheel.preventDefault';
 
-        el.addEventListener('DOMMouseScroll', preventDefault, false); // older FF
         el.addEventListener(wheelEvent, preventDefault, wheelOpt); // modern desktop
         el.addEventListener('touchmove.preventDefault', preventDefault, wheelOpt); // mobile
         el.addEventListener('keydown.preventDefault', preventDefaultForScrollKeys, false);
@@ -856,10 +856,9 @@ $.fn.serializeObject = function () {
             }));
         } catch(e) {}
 
-        var wheelOpt = supportsPassive ? { passive: false } : false;
+        var wheelOpt = supportsPassive ? { passive: true } : false;
         var wheelEvent = 'onwheel' in document.createElement('div') ? 'wheel.preventDefault' : 'mousewheel.preventDefault';
 
-        el.removeEventListener('DOMMouseScroll.preventDefault', preventDefault, false);
         el.removeEventListener(wheelEvent, preventDefault, wheelOpt);
         el.removeEventListener('touchmove.preventDefault', preventDefault, wheelOpt);
         el.removeEventListener('keydown.preventDefault', preventDefaultForScrollKeys, false);
@@ -1596,7 +1595,7 @@ $.fn.serializeObject = function () {
 
         Sticky.reset(el);
 
-        $(el).on('wheel.sticky', Sticky.onWheel);
+        $(el).on('wheel.sticky', Sticky.onWheel, {passive: true});
         $(el).on('scrolldelta.sticky', Sticky.onScrollDelta);
         $(el).on('scrolldelta.sticky', Sticky.debounce(Sticky.onScrollDebounce, 1000*Sticky.parseDuration(Sticky.get("debounce"))));
 
@@ -1719,7 +1718,7 @@ $.fn.serializeObject = function () {
                             if(autoscrollTimeout != undefined) clearTimeout(autoscrollTimeout);
                             $(scroller).prop("user-scroll", true);
                             $(scroller).stop();
-                        });
+                        }, {passive: true});
 
                         $(scroller).on("mouseleave.autoscroll touchend.autoscroll");
                         $(scroller).on("mouseleave.autoscroll touchend.autoscroll", function() {
@@ -1730,12 +1729,11 @@ $.fn.serializeObject = function () {
                                 $(scroller).data("autoscroll-prevent", "true");
                                 $(scroller).off("mouseleave.autoscroll touchend.autoscroll");
                             }
-                        });
+                        }, {passive: true});
 
                         $(scroller).on("onbeforeunload.autoscroll");
                         $(scroller).on("onbeforeunload.autoscroll", function() {
 
-                            $(this).off("mousewheel.autoscroll touchstart.autoscroll");
                             $(this).off("mouseenter.autoscroll touchstart.autoscroll");
                             $(this).off("mouseleave.autoscroll touchend.autoscroll");
                             $(this).off("scroll.autoscroll");
@@ -1743,7 +1741,7 @@ $.fn.serializeObject = function () {
 
                             var scrollerWindow = $(this).closestScrollableWindow();
                             $(scrollerWindow).off("scroll.autoscroll");
-                        });
+                        }, {passive: true});
                     }
 
                     //
@@ -1759,7 +1757,7 @@ $.fn.serializeObject = function () {
 
                             $(this).prop("user-scroll", true);
                             $(this).stop();
-                        });
+                        }, {passive: true});
 
                         if (Settings.debug) console.log("Autoscroll reverse delay applied is \"" + reverseDelay + "\".");
                         setTimeout(() => Sticky.scrollTo({

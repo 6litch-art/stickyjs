@@ -87,6 +87,7 @@ html { scroll-behavior: unset !important; }
 	height: 100%;
 }
 
+.sticky-swipehint { overflow: scroll; }
 .sticky-swipehint.sticky-swipehint-reveal .sticky-swipehint-container > span { opacity:1; }
 .sticky-swipehint                         .sticky-swipehint-container > span img { max-width: 100%; }
 .sticky-swipehint                         .sticky-swipehint-container > span

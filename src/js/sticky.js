@@ -954,14 +954,14 @@ $.fn.serializeObject = function () {
                     if((e.scrollX.direction !== undefined && e.scrollX.delta) || scrollPercent == 100) {
 
                         if(!(className in trigger[e.target[0]])) trigger[e.target[0]][className] = true;
-                        if(scrollTrigger == "from" && scrollDir == e.scrollX.direction && e.scrollX.percent >= scrollPercent)
+                        if(scrollTrigger == "from" && e.scrollX.percent >= scrollPercent)
                             e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:0, dir:scrollDir, percent:scrollPercent}}));
-                        if(scrollTrigger == "once" && scrollDir == e.scrollX.direction && e.scrollX.percent >= scrollPercent && trigger[e.target[0]][className])
+                        if(scrollTrigger == "once" && e.scrollX.percent >= scrollPercent && trigger[e.target[0]][className])
                             e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:1, dir:scrollDir, percent:scrollPercent}}));
 
-                        if(scrollTrigger == "every" && scrollDir == e.scrollX.direction && e.scrollX.percent <  scrollPercent  )
+                        if(scrollTrigger == "every" && e.scrollX.percent <  scrollPercent  )
                             trigger[e.target[0]][className] = true;
-                        if(scrollTrigger == "every" && scrollDir == e.scrollX.direction && e.scrollX.percent >= scrollPercent && trigger[e.target[0]][className])
+                        if(scrollTrigger == "every" && e.scrollX.percent >= scrollPercent && trigger[e.target[0]][className])
                             e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:2, dir:scrollDir, percent:scrollPercent}}));
 
                         trigger[e.target[0]][className] = (scrollTrigger == "every" && e.scrollX.percent <  scrollPercent);
@@ -970,11 +970,11 @@ $.fn.serializeObject = function () {
                     if((e.scrollY.direction !== undefined && e.scrollY.delta) || scrollPercent == 100) {
 
                         if(!className in trigger[e.target[0]]) trigger[e.target[0]][className] = true;
-                        if(scrollTrigger == "from" && scrollDir == e.scrollY.direction && e.scrollY.percent >= scrollPercent)
+                        if(scrollTrigger == "from" && e.scrollY.percent >= scrollPercent)
                             e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:0, dir:scrollDir, percent:scrollPercent}}));
-                        if(scrollTrigger == "once" && scrollDir == e.scrollY.direction && e.scrollY.percent >= scrollPercent && trigger[e.target[0]][className])
+                        if(scrollTrigger == "once" && e.scrollY.percent >= scrollPercent && trigger[e.target[0]][className])
                             e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:1, dir:scrollDir, percent:scrollPercent}}));
-                        if(scrollTrigger == "every" && scrollDir == e.scrollY.direction && e.scrollY.percent >= scrollPercent && trigger[e.target[0]][className])
+                        if(scrollTrigger == "every" && e.scrollY.percent >= scrollPercent && trigger[e.target[0]][className])
                             e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:2, dir:scrollDir, percent:scrollPercent}}));
 
                         trigger[e.target[0]][className] = (scrollTrigger == "every" && e.scrollY.percent <  scrollPercent);
@@ -1638,6 +1638,7 @@ $.fn.serializeObject = function () {
                     var debounceTime = 1000*Sticky.parseDuration(Sticky.get("swipehint_debounce"));
                     if(!debounceTime) return;
 
+                    console.log(debounceTime);
                     $(".sticky-swipehint").on('scroll', Sticky.debounce(function() {
 
                         $(this).addClass("sticky-swipehint-reveal");
@@ -1718,8 +1719,8 @@ $.fn.serializeObject = function () {
                     // Mouse events
                     if (mouseAction) {
 
-                        $(scroller).off("mouseenter.autoscroll touchstart.autoscroll");
-                        $(scroller).on("mouseenter.autoscroll touchstart.autoscroll", function() {
+                        $(scroller).off("mousewheel.autoscroll mouseenter.autoscroll touchstart.autoscroll");
+                        $(scroller).on("mousewheel.autoscroll mouseenter.autoscroll touchstart.autoscroll", function() {
 
                             if(autoscrollTimeout != undefined) clearTimeout(autoscrollTimeout);
                             $(scroller).prop("user-scroll", true);

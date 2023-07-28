@@ -74,7 +74,7 @@ $.fn.isScrollableX = function() {
         var hasScrollableContent = el.scrollWidth > el.clientWidth;
 
         var overflowStyle   = window.getComputedStyle(el).overflowX;
-        var isOverflowScroll = overflowStyle.indexOf('scroll') !== -1;
+        var isOverflowScroll = overflowStyle.indexOf('scroll') !== -1 || overflowStyle.indexOf('auto') !== -1;
 
         return hasScrollableContent && (isOverflowScroll || isDom);
 
@@ -90,7 +90,7 @@ $.fn.isScrollableY = function() {
         var hasScrollableContent = el.scrollHeight > el.clientHeight;
 
         var overflowStyle   = window.getComputedStyle(el).overflowY;
-        var isOverflowScroll = overflowStyle.indexOf('scroll') !== -1;
+        var isOverflowScroll = overflowStyle.indexOf('scroll') !== -1 || overflowStyle.indexOf('auto') !== -1;
 
         return hasScrollableContent && (isOverflowScroll || isDom);
 
@@ -416,6 +416,7 @@ $.fn.serializeObject = function () {
 
         event.target = $(event.target);
         event.target = $(event.target).isScrollable() ? event.target : $(event.target).closestScrollable();
+
         if(event.target.length == 0) return event;
 
         if ($(event.target).prop("user-scroll") === undefined)
@@ -937,47 +938,58 @@ $.fn.serializeObject = function () {
 
                 if(!(e.target[0] in trigger)) trigger[e.target[0]] = {};
 
-                var regex = /sticky-scrollpercent(?:-(from|every|once)){0,1}-(\d+)(udlr){0,1}/gi;
+                var regex = /sticky-scrollpercent(?:-(from|every|once)){0,1}-(\d+)([udlr]){0,1}/gi;
                 if( (match = regex.exec(className)) ) {
 
                     var scrollTrigger = match[1] || "every";
-
-                    var scrollDir = match[3] || "d";
+                    var scrollPercent = parseInt(match[2]);
+                    var scrollDir = match[3] || undefined;
                     if(scrollDir == "u") scrollDir = "up";
                     if(scrollDir == "d") scrollDir = "down";
                     if(scrollDir == "l") scrollDir = "left";
                     if(scrollDir == "r") scrollDir = "right";
 
-                    var scrollPercent = parseInt(match[2]);
-                    if(scrollDir == "up" || scrollDir == "left") scrollPercent = 100-scrollPercent;
 
-                    if((e.scrollX.direction !== undefined && e.scrollX.delta) || scrollPercent == 100) {
+                    if((e.scrollX.direction !== undefined && e.scrollX.delta) || e.scrollX.percent == 100 || e.scrollX.percent == 0) {
+                      
+                        var scrollDirX = scrollDir == undefined ? "right" : scrollDir;
+                        if(scrollDirX == "right" || scrollDirX == "left") {
 
-                        if(!(className in trigger[e.target[0]])) trigger[e.target[0]][className] = true;
-                        if(scrollTrigger == "from" && scrollDir == e.scrollX.direction && e.scrollX.percent >= scrollPercent)
-                            e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:0, dir:scrollDir, percent:scrollPercent}}));
-                        if(scrollTrigger == "once" && scrollDir == e.scrollX.direction && e.scrollX.percent >= scrollPercent && trigger[e.target[0]][className])
-                            e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:1, dir:scrollDir, percent:scrollPercent}}));
+                            var scrollPercentX = scrollDirX == "left" ? 100-scrollPercent : scrollPercent;
 
-                        if(scrollTrigger == "every" && scrollDir == e.scrollX.direction && e.scrollX.percent <  scrollPercent  )
-                            trigger[e.target[0]][className] = true;
-                        if(scrollTrigger == "every" && scrollDir == e.scrollX.direction && e.scrollX.percent >= scrollPercent && trigger[e.target[0]][className])
-                            e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:2, dir:scrollDir, percent:scrollPercent}}));
+                            if(!(className in trigger[e.target[0]])) trigger[e.target[0]][className] = true;
 
-                        trigger[e.target[0]][className] = (scrollTrigger == "every" && e.scrollX.percent <  scrollPercent);
+                            if(scrollTrigger == "from" && scrollDirX == e.scrollX.direction && e.scrollX.percent >= scrollPercentX)
+                                e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:0, dir:scrollDirX, percent:scrollPercentX}}));
+                            if(scrollTrigger == "once" && scrollDirX == e.scrollX.direction && e.scrollX.percent >= scrollPercentX && trigger[e.target[0]][className])
+                                e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:1, dir:scrollDirX, percent:scrollPercentX}}));
+
+                            if(scrollTrigger == "every" && scrollDirX == e.scrollX.direction && e.scrollX.percent <  scrollPercentX  )
+                                trigger[e.target[0]][className] = true;
+                            if(scrollTrigger == "every" && scrollDirX == e.scrollX.direction && e.scrollX.percent >= scrollPercentX && trigger[e.target[0]][className])
+                                e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:2, dir:scrollDirX, percent:scrollPercentX}}));
+
+                            trigger[e.target[0]][className] = (scrollTrigger == "every" && e.scrollX.percent <  scrollPercentX);
+                        }
                     }
 
-                    if((e.scrollY.direction !== undefined && e.scrollY.delta) || scrollPercent == 100) {
+                    if((e.scrollY.direction !== undefined && e.scrollY.delta) || e.scrollY.percent == 100 || e.scrollY.percent == 0) {
+                        
+                        var scrollDirY = scrollDir == undefined ? "down" : scrollDir;
+                        if(scrollDirY == "up" || scrollDirY == "down") {
 
-                        if(!className in trigger[e.target[0]]) trigger[e.target[0]][className] = true;
-                        if(scrollTrigger == "from" && scrollDir == e.scrollY.direction && e.scrollY.percent >= scrollPercent)
-                            e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:0, dir:scrollDir, percent:scrollPercent}}));
-                        if(scrollTrigger == "once" && scrollDir == e.scrollY.direction && e.scrollY.percent >= scrollPercent && trigger[e.target[0]][className])
-                            e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:1, dir:scrollDir, percent:scrollPercent}}));
-                        if(scrollTrigger == "every" && scrollDir == e.scrollY.direction && e.scrollY.percent >= scrollPercent && trigger[e.target[0]][className])
-                            e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:2, dir:scrollDir, percent:scrollPercent}}));
+                            var scrollPercentY = scrollDirY == "up" ? 100-scrollPercent : scrollPercent;
 
-                        trigger[e.target[0]][className] = (scrollTrigger == "every" && e.scrollY.percent <  scrollPercent);
+                            if(!className in trigger[e.target[0]]) trigger[e.target[0]][className] = true;
+                            if(scrollTrigger == "from" && scrollDirY == e.scrollY.direction && e.scrollY.percent >= scrollPercentY)
+                                e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:0, dir:scrollDirY, percent:scrollPercentY}}));
+                            if(scrollTrigger == "once" && scrollDirY == e.scrollY.direction && e.scrollY.percent >= scrollPercentY && trigger[e.target[0]][className])
+                                e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:1, dir:scrollDirY, percent:scrollPercentY}}));
+                            if(scrollTrigger == "every" && scrollDirY == e.scrollY.direction && e.scrollY.percent >= scrollPercentY && trigger[e.target[0]][className])
+                                e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:2, dir:scrollDirY, percent:scrollPercentY}}));
+
+                            trigger[e.target[0]][className] = (scrollTrigger == "every" && e.scrollY.percent <  scrollPercentY);
+                        }
                     }
                 }
 
@@ -1470,6 +1482,7 @@ $.fn.serializeObject = function () {
         if(!Settings.ready) return;
 
         // Overscroll detection
+        // NB: This might be improved by using an hashtable[target]
         var overscroll = {top:false, right:false, bottom:false, left:false};
         overscroll.top    = Sticky.overscrollTop(e);
         overscroll.bottom = Sticky.overscrollBottom(e);
@@ -1663,6 +1676,10 @@ $.fn.serializeObject = function () {
         if(Sticky.get("scrollpercent"))
         {
             $(el).on('scrolldelta.sticky.percent', Sticky.onScrollPercent);
+            $(".sticky-scrollpercent").each(function() {
+                if(el == this) return;
+                $(this).on('scrolldelta.sticky.percent', Sticky.onScrollPercent);
+            });
         }
 
         // Sticky autoscroll

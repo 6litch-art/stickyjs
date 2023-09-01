@@ -936,7 +936,8 @@ $.fn.serializeObject = function () {
         var classList = e.target.length ? e.target[0].classList : [];
             classList.forEach(function(className) {
 
-                if(!(e.target[0] in trigger)) trigger[e.target[0]] = {};
+                target = e.target[0] == $("html")[0] ? window : e.target[0];
+                if(!(target in trigger)) trigger[target] = {};
 
                 var regex = /sticky-scrollpercent(?:-(from|every|once)){0,1}-(\d+)([udlr]){0,1}/gi;
                 if( (match = regex.exec(className)) ) {
@@ -957,19 +958,19 @@ $.fn.serializeObject = function () {
 
                             var scrollPercentX = scrollDirX == "left" ? 100-scrollPercent : scrollPercent;
 
-                            if(!(className in trigger[e.target[0]])) trigger[e.target[0]][className] = true;
+                            if(!(className in trigger[target])) trigger[target][className] = true;
 
                             if(scrollTrigger == "from" && scrollDirX == e.scrollX.direction && e.scrollX.percent >= scrollPercentX)
-                                e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:0, dir:scrollDirX, percent:scrollPercentX}}));
-                            if(scrollTrigger == "once" && scrollDirX == e.scrollX.direction && e.scrollX.percent >= scrollPercentX && trigger[e.target[0]][className])
-                                e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:1, dir:scrollDirX, percent:scrollPercentX}}));
+                                target.dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:0, dir:scrollDirX, percent:scrollPercentX}}));
+                            if(scrollTrigger == "once" && scrollDirX == e.scrollX.direction && e.scrollX.percent >= scrollPercentX && trigger[target][className])
+                                target.dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:1, dir:scrollDirX, percent:scrollPercentX}}));
 
                             if(scrollTrigger == "every" && scrollDirX == e.scrollX.direction && e.scrollX.percent <  scrollPercentX  )
-                                trigger[e.target[0]][className] = true;
-                            if(scrollTrigger == "every" && scrollDirX == e.scrollX.direction && e.scrollX.percent >= scrollPercentX && trigger[e.target[0]][className])
-                                e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:2, dir:scrollDirX, percent:scrollPercentX}}));
+                                trigger[target][className] = true;
+                            if(scrollTrigger == "every" && scrollDirX == e.scrollX.direction && e.scrollX.percent >= scrollPercentX && trigger[target][className])
+                                target.dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:2, dir:scrollDirX, percent:scrollPercentX}}));
 
-                            trigger[e.target[0]][className] = (scrollTrigger == "every" && e.scrollX.percent <  scrollPercentX);
+                            trigger[target][className] = (scrollTrigger == "every" && e.scrollX.percent <  scrollPercentX);
                         }
                     }
 
@@ -980,15 +981,15 @@ $.fn.serializeObject = function () {
 
                             var scrollPercentY = scrollDirY == "up" ? 100-scrollPercent : scrollPercent;
 
-                            if(!className in trigger[e.target[0]]) trigger[e.target[0]][className] = true;
+                            if(!className in trigger[target]) trigger[target][className] = true;
                             if(scrollTrigger == "from" && scrollDirY == e.scrollY.direction && e.scrollY.percent >= scrollPercentY)
-                                e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:0, dir:scrollDirY, percent:scrollPercentY}}));
-                            if(scrollTrigger == "once" && scrollDirY == e.scrollY.direction && e.scrollY.percent >= scrollPercentY && trigger[e.target[0]][className])
-                                e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:1, dir:scrollDirY, percent:scrollPercentY}}));
-                            if(scrollTrigger == "every" && scrollDirY == e.scrollY.direction && e.scrollY.percent >= scrollPercentY && trigger[e.target[0]][className])
-                                e.target[0].dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:2, dir:scrollDirY, percent:scrollPercentY}}));
+                                target.dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:0, dir:scrollDirY, percent:scrollPercentY}}));
+                            if(scrollTrigger == "once" && scrollDirY == e.scrollY.direction && e.scrollY.percent >= scrollPercentY && trigger[target][className])
+                                target.dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:1, dir:scrollDirY, percent:scrollPercentY}}));
+                            if(scrollTrigger == "every" && scrollDirY == e.scrollY.direction && e.scrollY.percent >= scrollPercentY && trigger[target][className])
+                                target.dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:2, dir:scrollDirY, percent:scrollPercentY}}));
 
-                            trigger[e.target[0]][className] = (scrollTrigger == "every" && e.scrollY.percent <  scrollPercentY);
+                            trigger[target][className] = (scrollTrigger == "every" && e.scrollY.percent <  scrollPercentY);
                         }
                     }
                 }

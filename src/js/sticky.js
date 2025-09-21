@@ -1001,7 +1001,7 @@ $.fn.serializeObject = function () {
     var scrollSnapDebounce = false;
     Sticky.onScrollSnap = function (e)
     {
-        if (Settings.debug) console.log(show,"Sticky magnetic:", scrollSnap, scrollSnapStart, scrollSnapProximity);
+        if (Settings.debug) console.log("Sticky magnetic:", scrollSnap, scrollSnapStart, scrollSnapProximity);
         if(!Settings.ready) return;
 
         if(Sticky.get("passive") == true) return;
@@ -1139,7 +1139,7 @@ $.fn.serializeObject = function () {
             if (ids.length == 0) return;
 
             var hash = null;
-            if(Settings.debug) console.log(show,"Sticky headlines:", $(ids));
+            if(Settings.debug) console.log("Sticky headlines:", $(ids));
 
             var elAll = $(ids).filter(function() {
 
@@ -1450,7 +1450,7 @@ $.fn.serializeObject = function () {
                     : !isAbove && (top    + this.clientHeight + extraEaseIn < 0) &&
                     !isBelow && (bottom - this.clientHeight - extraEaseIn > 0);
 
-                if(Settings.debug) console.log(show,"Sticky ease-in:",isAbove,isBelow,isBetween);
+                if(Settings.debug) console.log("Sticky ease-in:",isAbove,isBelow,isBetween);
                 show = (!isAbove && !isBelow);
 
             } else if(e.first) show = true;
@@ -1465,7 +1465,7 @@ $.fn.serializeObject = function () {
                     : !isAbove && (top    + this.clientHeight + extraEaseOut < 0) &&
                     !isBelow && (bottom - this.clientHeight - extraEaseOut > 0);
 
-                if(Settings.debug) console.log(show,"Sticky ease-out:",isAbove,isBelow,isBetween);
+                if(Settings.debug) console.log("Sticky ease-out:",isAbove,isBelow,isBetween);
                 show = !isAbove && !isBelow;
 
             }
@@ -1560,8 +1560,9 @@ $.fn.serializeObject = function () {
                 (noScrollX && !autoscrollY) ||
                 (!autoscrollX && !autoscrollY)) return;
 
-            if (Settings.debug && !$(this).isScrollable()[0])
-                console.error(this, "is not scrollable: autoscroll canceled");
+            if (!$(this).isScrollable()) {
+                if(Settings.debug) console.error(this, "is not scrollable: autoscroll canceled");
+            }
 
             if(reverse && $(this).scrollLeft() == 0 && $(this).scrollTop() == 0)
                 reverse = !reverse;

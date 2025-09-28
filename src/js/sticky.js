@@ -4,11 +4,13 @@ jQuery.event.special.touchmove  = { setup: function( _, ns, handle ) { this.addE
 jQuery.event.special.wheel      = { setup: function( _, ns, handle ) { this.addEventListener("wheel", handle, { passive: true }); } };
 jQuery.event.special.mousewheel = { setup: function( _, ns, handle ) { this.addEventListener("mousewheel", handle, { passive: true }); } };
 
+var replaceHashFlag = false;
 // Sticky.js
 (function(namespace) {
 
     namespace.replaceHash = function(newHash, triggerHashChange = true, skipIfEmptyIdentifier = true) {
 
+        replaceHashFlag = true;
         var oldHash = location.hash;
         var oldURL = location.origin+location.pathname+location.hash;
         var oldHashElement = $(oldHash);
@@ -35,10 +37,11 @@ jQuery.event.special.mousewheel = { setup: function( _, ns, handle ) { this.addE
 
         var state = Object.assign({}, history.state, {href: newURL});
         history.replaceState(state, '', newURL);
-
+        
         if(triggerHashChange)
             dispatchEvent(new HashChangeEvent("hashchange", {oldURL:oldURL, newURL:newURL}));
 
+        replaceHashFlag = false;
         return true;
     }
 
@@ -693,9 +696,9 @@ $.fn.serializeObject = function () {
         easing   = dict["easing"] ?? "swing";
         debounce = dict["debounce"] ?? 0;
 
-        duration  = 1000*Transparent.parseDuration(dict["duration"] ?? 0);
-        durationX = 1000*Transparent.parseDuration(dict["duration-x"] ?? dict["duration"] ?? 0);
-        durationY = 1000*Transparent.parseDuration(dict["duration-y"] ?? dict["duration"] ?? 0);
+        duration  = 1000*Sticky.parseDuration(dict["duration"] ?? 0);
+        durationX = 1000*Sticky.parseDuration(dict["duration-x"] ?? dict["duration"] ?? 0);
+        durationY = 1000*Sticky.parseDuration(dict["duration-y"] ?? dict["duration"] ?? 0);
 
         if(speed) {
 
@@ -732,7 +735,7 @@ $.fn.serializeObject = function () {
         } else {
 
             $(el).animate({scrollTop: scrollTop}, durationY, easing,
-                () => $(el).animate({scrollLeft: scrollLeft}, durationX, easing, Transparent.debounce(callbackWrapper, debounce))
+                () => $(el).animate({scrollLeft: scrollLeft}, durationX, easing, Sticky.debounce(callbackWrapper, debounce))
             );
         }
 
@@ -1147,13 +1150,15 @@ $.fn.serializeObject = function () {
             var el = elAll.filter(function() {
 
                 if(this === $(Settings.identifier)) return false;
-                return this.getBoundingClientRect().top + this.scrollHeight > Sticky.getScrollPadding(scroller).top + 1;
+                if($(this).hasClass("sticky-headlines-skip")) return false;
+                return this.getBoundingClientRect().top + this.scrollHeight > 0;
             });
 
             var currentHashEl = $(window.location.hash)[0];
             var atTop = $(window).scrollTop() < 2;
             var atBottom = $(window).scrollTop() + $(window).height() - $(document).height() > -2;
 
+            $(currentHashEl).addClass("highlight");
             if((el.length == 0 && !atTop) || (!elAll.has(currentHashEl) && atBottom)) currentHash = window.location.hash;
             else {
 
@@ -1177,7 +1182,7 @@ $.fn.serializeObject = function () {
                         }
 
                         window.replaceHash(hash, false, false);
-                        dispatchEvent(new HashChangeEvent("hashchange"))
+                        dispatchEvent(new HashChangeEvent("hashchange")); // doing it manually to avoid snapping
                     }
 
                     currentHash = hash;
@@ -1816,7 +1821,7 @@ $.fn.serializeObject = function () {
 
         Sticky.onLoad();
         $(window).trigger("scroll.sticky");
-        $(window).on("hashchange", (e) => Sticky.reset());
+        // $(window).on("hashchange", (e) => Sticky.reset());
     });
 
     return Sticky;

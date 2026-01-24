@@ -1,6 +1,16 @@
-(function(namespace) {
+import $ from 'jquery';
 
-    var replaceHashFlag = false;
+// Modern browser: use passive event listeners where appropriate for better performance
+jQuery.event.special.touchstart = { setup: function( _, ns, handle ) { this.addEventListener("touchstart", handle, { passive: !ns.includes("noPreventDefault") }); } };
+jQuery.event.special.touchmove  = { setup: function( _, ns, handle ) { this.addEventListener("touchmove", handle, { passive: !ns.includes("noPreventDefault") }); } };
+jQuery.event.special.wheel      = { setup: function( _, ns, handle ) { this.addEventListener("wheel", handle, { passive: true }); } };
+jQuery.event.special.mousewheel = { setup: function( _, ns, handle ) { this.addEventListener("mousewheel", handle, { passive: true }); } };
+
+var scrollState = {};
+var replaceHashFlag = false;
+
+// Sticky.js
+(function(namespace) {
 
     namespace.replaceHash = function(newHash, triggerHashChange = true, skipIfEmptyIdentifier = true) {
 
@@ -174,17 +184,18 @@ $.fn.serializeObject = function () {
 };
 
 
-(function (root, factory) {
+(function(root, factory) {
 
     if (typeof define === 'function' && define.amd) {
         define(factory);
     } else if (typeof exports === 'object') {
         module.exports = factory();
     } else {
+        root = window;
         root.Sticky = factory();
     }
 
-})(this, function () {
+})(this, function() {
 
     var Sticky = window.Sticky = {};
     Sticky.version = '1.0.0';
@@ -922,11 +933,12 @@ $.fn.serializeObject = function () {
         var classList = e.target.length ? e.target[0].classList : [];
             classList.forEach(function(className) {
 
-                target = e.target[0] == $("html")[0] ? window : e.target[0];
+                var target = e.target[0] == $("html")[0] ? window : e.target[0];
                 if(!(target in trigger)) trigger[target] = {};
 
                 var regex = /sticky-scrollpercent(?:-(from|every|once)){0,1}-(\d+)([udlr]){0,1}/gi;
-                if( (match = regex.exec(className)) ) {
+                var match = regex.exec(className);
+                if( match ) {
 
                     var scrollTrigger = match[1] || "every";
                     var scrollPercent = parseInt(match[2]);
@@ -1060,7 +1072,7 @@ $.fn.serializeObject = function () {
 
     Sticky.getMagnets = function (el)
     {
-        return $(el).find(".sticky-magnet")
+        return $(el).find(".sticky-magnet").toArray()
             .sort(function (m1, m2) {
 
                 return m1.offsetTop > m2.offsetTop ? 1 : (m1.offsetTop < m2.offsetTop ?  -1 : 0);
@@ -1637,7 +1649,7 @@ $.fn.serializeObject = function () {
                     $(this).append(span);
                 });
 
-                timeout = setTimeout(() => {
+                var timeout = setTimeout(() => {
 
                     $(".sticky-swipehint").addClass("sticky-swipehint-reveal");
                     $(".sticky-swipehint").on("scroll", function()

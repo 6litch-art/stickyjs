@@ -1147,17 +1147,17 @@ $.fn.serializeObject = function () {
                 if(this === $(Settings.identifier)) return false;
                 return this.getBoundingClientRect().top < Sticky.getScrollPadding(scroller).top + 1;
 
-            }).toArray().sort(function (el1, el2) {
+            }).sort(function (el1, el2) {
 
                 return el1.offsetTop > el2.offsetTop ? -1
                     : (el1.offsetTop < el2.offsetTop ?  1 : 0);
             });
 
-            var el = $(elAll).filter(function() {
-                var dom = this; // this is a DOM element in jQuery .filter
-                if(dom === $(Settings.identifier)[0]) return false; // compare to DOM element
-                if($(dom).hasClass("sticky-headlines-skip")) return false;
-                return dom.getBoundingClientRect().top + dom.scrollHeight > 0;
+            var el = elAll.filter(function() {
+
+                if(this === $(Settings.identifier)) return false;
+                if($(this).hasClass("sticky-headlines-skip")) return false;
+                return this.getBoundingClientRect().top + this.scrollHeight > 0;
             });
 
             var currentHashEl = $(window.location.hash)[0];
@@ -1165,7 +1165,7 @@ $.fn.serializeObject = function () {
             var atBottom = $(window).scrollTop() + $(window).height() - $(document).height() > -2;
 
             $(currentHashEl).addClass("highlight");
-            if((el.length == 0 && !atTop) || (!$(elAll).has(currentHashEl) && atBottom)) currentHash = window.location.hash;
+            if((el.length == 0 && !atTop) || (!elAll.has(currentHashEl) && atBottom)) currentHash = window.location.hash;
             else {
 
                 if(el.length > 0) hash = "#" + el[0].getAttribute("id");
@@ -1180,7 +1180,7 @@ $.fn.serializeObject = function () {
                         $('a[href^=\''+hash+'\']').addClass("highlight");
                     }
 
-                    if(Sticky.userScroll(el) || $(el).hasClass("sticky-magnet") || (hash == null && $(elAll).length == 0)) {
+                    if(Sticky.userScroll(el) || $(el).hasClass("sticky-magnet") || (hash == null && elAll.length == 0)) {
 
                         if(first) {
                             first = false;

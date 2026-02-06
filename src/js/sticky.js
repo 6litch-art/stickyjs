@@ -1142,16 +1142,16 @@ $.fn.serializeObject = function () {
             var hash = null;
             if(Settings.debug > 1) console.log("Sticky headlines:", $(ids));
 
-            var elAll = $(ids).filter(function() {
+            var elAll = $($(ids).filter(function() {
 
                 if(this === $(Settings.identifier)) return false;
                 return this.getBoundingClientRect().top < Sticky.getScrollPadding(scroller).top + 1;
 
-            }).sort(function (el1, el2) {
+            }).toArray().sort(function (el1, el2) {
 
                 return el1.offsetTop > el2.offsetTop ? -1
                     : (el1.offsetTop < el2.offsetTop ?  1 : 0);
-            });
+            }));
 
             var el = elAll.filter(function() {
 

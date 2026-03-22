@@ -1,6 +1,6 @@
 {
   "name": "@glitchr/stickyjs",
-  "version": "1.0.41",
+  "version": "1.0.42",
   "description": "Sticky scroll library",
   "main": "src/index.js",
   "repository": {

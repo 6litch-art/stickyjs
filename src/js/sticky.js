@@ -902,7 +902,7 @@ $.fn.serializeObject = function () {
             x0 = touchobj.pageX;
             y0 = touchobj.pageY;
 
-        }, false);
+        }, { passive: true });
 
         window.addEventListener('touchend', function (e) {
 
@@ -921,7 +921,7 @@ $.fn.serializeObject = function () {
                     handleSwipe(this, swipeDirection);
             });
 
-        }, false);
+        }, { passive: true });
     }
 
 
@@ -979,7 +979,7 @@ $.fn.serializeObject = function () {
 
                             var scrollPercentY = scrollDirY == "up" ? 100-scrollPercent : scrollPercent;
 
-                            if(!className in trigger[target]) trigger[target][className] = true;
+                            if(!(className in trigger[target])) trigger[target][className] = true;
                             if(scrollTrigger == "from" && scrollDirY == e.scrollY.direction && e.scrollY.percent >= scrollPercentY)
                                 target.dispatchEvent(new CustomEvent("scrollpercent", {detail: {scroll:e, trigger:0, dir:scrollDirY, percent:scrollPercentY}}));
                             if(scrollTrigger == "once" && scrollDirY == e.scrollY.direction && e.scrollY.percent >= scrollPercentY && trigger[target][className])
@@ -1079,11 +1079,13 @@ $.fn.serializeObject = function () {
 
             }).map(function() {
 
-                var scroller = $(this).closestScrollable()[0];
-                var scrollTop     = $(scroller).scrollTop() + Sticky.getScrollPadding(scroller).top;
-                var scrollBottom  = $(scroller).scrollTop() + Sticky.getScrollPadding(scroller).top + scroller.clientHeight;
-                var scrollLeft    = $(scroller).scrollLeft() + Sticky.getScrollPadding(scroller).left;
-                var scrollRight   = $(scroller).scrollLeft() + Sticky.getScrollPadding(scroller).left + scroller.clientWidth;
+                var scroller  = $(this).closestScrollable()[0];
+                var $scroller = $(scroller);
+                var padding   = Sticky.getScrollPadding(scroller);
+                var scrollTop     = $scroller.scrollTop()  + padding.top;
+                var scrollBottom  = scrollTop + scroller.clientHeight;
+                var scrollLeft    = $scroller.scrollLeft() + padding.left;
+                var scrollRight   = scrollLeft + scroller.clientWidth;
 
                 var offsetTop     = this.offsetTop;
                 var offsetBottom  = this.offsetTop + this.clientHeight;
@@ -1142,16 +1144,16 @@ $.fn.serializeObject = function () {
             var hash = null;
             if(Settings.debug > 1) console.log("Sticky headlines:", $(ids));
 
-            var elAll = $($(ids).filter(function() {
+            var elAll = $(ids).filter(function() {
 
                 if(this === $(Settings.identifier)) return false;
                 return this.getBoundingClientRect().top < Sticky.getScrollPadding(scroller).top + 1;
 
-            }).toArray().sort(function (el1, el2) {
+            }).sort(function (el1, el2) {
 
                 return el1.offsetTop > el2.offsetTop ? -1
                     : (el1.offsetTop < el2.offsetTop ?  1 : 0);
-            }));
+            });
 
             var el = elAll.filter(function() {
 
@@ -1200,7 +1202,8 @@ $.fn.serializeObject = function () {
 
         $(e.target).find(".sticky-top").each(function() {
 
-            var scrollhide = $(this).attr("aria-scrollhide") || Sticky.get("scrollhide");
+            const $this = $(this);
+            var scrollhide = $this.attr("aria-scrollhide") || Sticky.get("scrollhide");
             scrollhide = scrollhide === "false" ? false : scrollhide;
 
             var that = this;
@@ -1209,10 +1212,10 @@ $.fn.serializeObject = function () {
                 var isAnchor = Sticky.epsilon(e.scrollY.top, anchorY);
                 if(e.first || isAnchor) {
 
-                    $(this).addClass("show");
-                    $(this).removeAttr("style");
+                    $this.addClass("show");
+                    $this.removeAttr("style");
 
-                } else if(e.scrollY.top > this.clientHeight || $(this).hasClass("show")) {
+                } else if(e.scrollY.top > this.clientHeight || $this.hasClass("show")) {
 
                     // Prevent element shaking
                     if(Sticky.get("transition") && Sticky.get("transition").indexOf(this) !== -1) return;
@@ -1222,61 +1225,61 @@ $.fn.serializeObject = function () {
                     // Action element
                     if(e.scrollY.delta < 0 && e.scrollY.bottom > 0) {
 
-                        $(this).addClass("show");
-                        $(this).removeAttr("style");
-                        if(!e.first) $(this).removeClass("skip-transition");
+                        $this.addClass("show");
+                        $this.removeAttr("style");
+                        if(!e.first) $this.removeClass("skip-transition");
 
                     } else if(e.scrollY.delta > 0){
 
-                        var borderThickness = parseInt($(this).css("border-bottom-width"))
-                            + parseInt($(this).css("border-top-width"));
+                        var borderThickness = parseInt($this.css("border-bottom-width"))
+                            + parseInt($this.css("border-top-width"));
 
-                        $(this).removeClass("show");
-                        $(this).css("top", -this.clientHeight-borderThickness);
+                        $this.removeClass("show");
+                        $this.css("top", -this.clientHeight-borderThickness);
                         if(e.scrollY.top == e.scrollY.delta && !e.first)
-                            $(this).addClass("skip-transition");
+                            $this.addClass("skip-transition");
                     }
 
                 } else { // Smooth transition
 
                     Sticky.remove("transition", this);
 
-                    $(this).css("top", Math.min(0,-e.scrollY.top));
+                    $this.css("top", Math.min(0,-e.scrollY.top));
                     if(e.scrollY.top > 0 && !e.first)
-                        $(this).addClass("skip-transition");
+                        $this.addClass("skip-transition");
                 }
             }
 
             var style = window.getComputedStyle(this);
-            var scroller = $(this).closestScrollable()[0];
-            var scrollcatchPos = $(this).attr("aria-scrollcatch-pos");
-            var scrollcatchClone = $(this).attr("aria-scrollcatch-clone");
+            var scroller = $this.closestScrollable()[0];
+            var scrollcatchPos = $this.attr("aria-scrollcatch-pos");
+            var scrollcatchClone = $this.attr("aria-scrollcatch-clone");
 
             if(!e.scrollT.elastic) {
 
                 if(style["position"] !== "fixed" && !scrollcatchClone) {
 
-                    var scrollcatch = $(this).attr("aria-scrollcatch") || Sticky.get("scrollcatch");
+                    var scrollcatch = $this.attr("aria-scrollcatch") || Sticky.get("scrollcatch");
                     scrollcatch = scrollcatch === true ? style["z-index"] : scrollcatch;
 
                     if (scrollcatch !== false && this.offsetTop <= scroller.scrollTop) {
 
-                        var that = $(this).clone().removeAttr("id")
+                        var that = $this.clone().removeAttr("id")
                             .attr("aria-scrollcatch-clone", true);
 
-                        $(this).addClass("caught")
+                        $this.addClass("caught")
                             .attr("aria-scrollcatch-pos", scroller.scrollTop+1)
                             .attr("aria-labelledby", $(that).uniqueId().attr("id"));
 
-                        $(that).insertBefore($(this).css("position", "fixed").css("z-index", scrollcatch));
+                        $(that).insertBefore($this.css("position", "fixed").css("z-index", scrollcatch));
                     }
 
                 } else if(scrollcatchPos > scroller.scrollTop) {
 
-                    var that = $("#"+$(this).attr("aria-labelledby"));
+                    var that = $("#"+$this.attr("aria-labelledby"));
                     $(that).remove();
 
-                    $(this).removeClass("caught").css("position", "").css("z-index" , "")
+                    $this.removeClass("caught").css("position", "").css("z-index" , "")
                         .removeAttr("aria-scrollcatch-pos");
                 }
             }
@@ -1285,51 +1288,52 @@ $.fn.serializeObject = function () {
         $(e.target).find(".sticky-bottom").each(function() {
 
             if(!Sticky.get("scrollhide")) return;
+            const $this = $(this);
             var threshold = 1000*Sticky.parseDuration(Sticky.get("threshold"));
             var scrollHint = Math.min(1, Math.max(0, parseFloat(Sticky.get("scrollhint"))));
-            var hasHint = $(this).hasClass("hint");
+            var hasHint = $this.hasClass("hint");
 
             if(e.reset) hasReset = true;
             if(scrollHint) {
 
                 if(!e.scrollY.bottomElastic) {
-                    $(this).removeClass("hint");
-                    $(this).off("click.hint");
+                    $this.removeClass("hint");
+                    $this.off("click.hint");
                     hasReset = false;
                 }
 
                 if(e.scrollT.delta.bottom > scrollHint*threshold && !hasHint) {
-                    $(this).addClass("hint");
-                    $(this).on("click.hint", function() { $(this).removeClass("hint").addClass("show"); });
+                    $this.addClass("hint");
+                    $this.on("click.hint", function() { $(this).removeClass("hint").addClass("show"); });
                     hasReset = false;
                 }
             }
 
             threshold = hasReset && hasHint ? (1-scrollHint) * threshold : threshold;
-            if($(this).hasClass("show")) {
+            if($this.hasClass("show")) {
 
-                $(this).off("click.hint");
+                $this.off("click.hint");
 
                 // Action element
                 if (e.scrollY.bottom > this.clientHeight || e.scrollT.delta.top > threshold) {
 
-                    $(this).removeClass("show");
-                    $(this).removeClass("hint");
-                    $(this).removeClass("skip-transition");
-                    $(this).removeAttr("style");
+                    $this.removeClass("show");
+                    $this.removeClass("hint");
+                    $this.removeClass("skip-transition");
+                    $this.removeAttr("style");
 
                 } else { // Smooth transition
 
-                    $(this).css("bottom", Math.min(0, -e.scrollY.bottom));
-                    $(this).css("position", Sticky.get("scrollcatch"));
-                    if(e.scrollY.bottom > 0) $(this).addClass("skip-transition");
+                    $this.css("bottom", Math.min(0, -e.scrollY.bottom));
+                    $this.css("position", Sticky.get("scrollcatch"));
+                    if(e.scrollY.bottom > 0) $this.addClass("skip-transition");
                 }
 
             } else if(e.scrollT.delta.bottom > threshold) {
 
-                $(this).off("click.hint");
-                $(this).addClass("show").removeClass("hint");
-                $(this).removeAttr("style");
+                $this.off("click.hint");
+                $this.addClass("show").removeClass("hint");
+                $this.removeAttr("style");
             }
         });
 
@@ -1426,7 +1430,7 @@ $.fn.serializeObject = function () {
                 if(extraEaseOut < 0) extraEaseOut = Math.max(extraEaseOut, -this.clientHeight);
 
                 // ease-in-out should not overlap
-                if(Math.sign(extraEaseIn) == Math.sign(extraEaseIn)) {
+                if(Math.sign(extraEaseIn) == Math.sign(extraEaseOut)) {
                     if(extraEaseIn < 0) extraEaseOut = Math.min(extraEaseOut, extraEaseIn);
                     else extraEaseOut = Math.max(extraEaseOut, extraEaseIn);
                 }
@@ -1438,7 +1442,7 @@ $.fn.serializeObject = function () {
             // Y = 0 : viewport bottom = element top
             var bottom = this.offsetTop+this.clientHeight - (e.scrollY.top);
 
-            var isBiggerThanViewport = (e.screen.vh < this.clienHeight);
+            var isBiggerThanViewport = (e.screen.vh < this.clientHeight);
             var show    = $(this).hasClass("show");
             var easeIn  = $(this).hasClass("sticky-easein")  && extraEaseIn !== undefined && !show;
             var easeOut = $(this).hasClass("sticky-easeout") && extraEaseOut !== undefined && show;
@@ -1715,13 +1719,16 @@ $.fn.serializeObject = function () {
                         var thresholdMinY = $(scroller).data("autoscroll-minheight");
                         if(thresholdMinY == undefined) thresholdMinY = Sticky.get("autoscroll_minheight");
 
-                        var scrollHeight = $(scroller).prop('scrollHeight') - $(scroller).prop("clientHeight");
-                        var atTop    = $(scroller).scrollTop() < 1;
-                        var atBottom = Math.abs($(scroller).scrollTop() - scrollHeight) < 1;
+                        var $scroller    = $(scroller);
+                        var scrollHeight = $scroller.prop('scrollHeight') - $scroller.prop("clientHeight");
+                        var scrollTop0   = $scroller.scrollTop();
+                        var atTop        = scrollTop0 < 1;
+                        var atBottom     = Math.abs(scrollTop0 - scrollHeight) < 1;
 
-                        var scrollWidth = $(scroller).prop('scrollWidth') - $(scroller).prop("clientWidth");
-                        var atLeft  = $(scroller).scrollLeft() < 1;
-                        var atRight = Math.abs($(scroller).scrollLeft() - scrollWidth) < 1;
+                        var scrollWidth  = $scroller.prop('scrollWidth') - $scroller.prop("clientWidth");
+                        var scrollLeft0  = $scroller.scrollLeft();
+                        var atLeft       = scrollLeft0 < 1;
+                        var atRight      = Math.abs(scrollLeft0 - scrollWidth) < 1;
 
                         var mouseAction = $(scroller).data("autoscroll-mouse-action");
                         if (mouseAction == undefined) mouseAction = Sticky.get("autoscroll_mouse_action");

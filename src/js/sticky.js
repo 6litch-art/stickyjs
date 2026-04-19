@@ -694,16 +694,16 @@ $.fn.serializeObject = function () {
         var maxScrollY = $(el).prop("scrollHeight") - Math.round($(el).prop("clientHeight"));
         if (maxScrollY == 0) maxScrollY = Math.round($(el).prop("clientHeight"));
 
-        scrollTop  = Math.max(0, Math.min(dict["top"] ?? $(el).prop("scrollTop"), maxScrollY));
-        scrollLeft = Math.max(0, Math.min(dict["left"] ?? $(el).prop("scrollLeft"), maxScrollX));
+        var scrollTop  = Math.max(0, Math.min(dict["top"] ?? $(el).prop("scrollTop"), maxScrollY));
+        var scrollLeft = Math.max(0, Math.min(dict["left"] ?? $(el).prop("scrollLeft"), maxScrollX));
 
-        speed    = parseFloat(dict["speed"] ?? 0);
-        easing   = dict["easing"] ?? "swing";
-        debounce = dict["debounce"] ?? 0;
+        var speed    = parseFloat(dict["speed"] ?? 0);
+        var easing   = dict["easing"] ?? "swing";
+        var debounce = dict["debounce"] ?? 0;
 
-        duration  = 1000*Sticky.parseDuration(dict["duration"] ?? 0);
-        durationX = 1000*Sticky.parseDuration(dict["duration-x"] ?? dict["duration"] ?? 0);
-        durationY = 1000*Sticky.parseDuration(dict["duration-y"] ?? dict["duration"] ?? 0);
+        var duration  = 1000*Sticky.parseDuration(dict["duration"] ?? 0);
+        var durationX = 1000*Sticky.parseDuration(dict["duration-x"] ?? dict["duration"] ?? 0);
+        var durationY = 1000*Sticky.parseDuration(dict["duration-y"] ?? dict["duration"] ?? 0);
 
         if(speed) {
 
@@ -1144,16 +1144,15 @@ $.fn.serializeObject = function () {
             var hash = null;
             if(Settings.debug > 1) console.log("Sticky headlines:", $(ids));
 
-            var elAll = $(ids).filter(function() {
 
+            var elAll = $(ids).filter(function() {
                 if(this === $(Settings.identifier)) return false;
                 return this.getBoundingClientRect().top < Sticky.getScrollPadding(scroller).top + 1;
-
-            }).sort(function (el1, el2) {
-
+            }).toArray().sort(function (el1, el2) {
                 return el1.offsetTop > el2.offsetTop ? -1
                     : (el1.offsetTop < el2.offsetTop ?  1 : 0);
             });
+            elAll = $(elAll); // re-wrap as jQuery so .filter (with `this` as element) and .has() work below
 
             var el = elAll.filter(function() {
 

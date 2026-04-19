@@ -707,6 +707,8 @@ $.fn.serializeObject = function () {
 
         if(speed) {
 
+            var distanceX = 0, distanceY = 0;
+
             var currentScrollX = $(el)[0].scrollLeft;
             if(currentScrollX < scrollLeft || scrollLeft == 0) // Going to the right
                 distanceX = Math.abs(scrollLeft - currentScrollX);

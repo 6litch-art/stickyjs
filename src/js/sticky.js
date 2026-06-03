@@ -677,7 +677,20 @@ $.fn.serializeObject = function () {
         return parseInt(closest);
     }
 
-    Sticky.userScroll = function(el = undefined) { return $(el === undefined ? document.documentElement : el).closestScrollable().prop("user-scroll") ?? true; }
+    Sticky.userScroll = function(el = undefined) {
+        // Defensive: closestScrollable() can return a value without .prop in
+        // some race conditions (transient DOM during transparent.js page
+        // transitions, sticky-scrollpercent triggers fired against detached
+        // nodes). Default to true so the autoscroll falls back to "user is
+        // scrolling, don't auto-advance."
+        try {
+            var $target = $(el === undefined ? document.documentElement : el);
+            if (!$target || !$target.length) return true;
+            var $scroll = $target.closestScrollable && $target.closestScrollable();
+            if (!$scroll || typeof $scroll.prop !== "function") return true;
+            return $scroll.prop("user-scroll") ?? true;
+        } catch (e) { return true; }
+    }
     Sticky.scrollTo = function(dict, callback = function() {}, el = window)
     {
         el = $(el).length ? $(el)[0] : window;
